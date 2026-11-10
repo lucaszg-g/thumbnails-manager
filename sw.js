@@ -1,4 +1,4 @@
-const CACHE = 'thumbs-studio-v4';
+const CACHE = 'thumbs-studio-v5';
 const SHELL = [
   '/',
   '/index.html',
@@ -9,6 +9,7 @@ const SHELL = [
   '/src/sync.js',
   '/src/style.css',
   '/manifest.webmanifest',
+  '/icons/icon.svg',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
 ];

@@ -1768,3 +1768,18 @@ dialog::backdrop {
     transform: scale(0.97);
   }
 }
+.brand img.brandmark {
+  width: 38px;
+  height: 38px;
+  object-fit: cover;
+  border-radius: 10px;
+  background: none;
+}
+
+@media (max-width: 760px) {
+  .brand img.brandmark {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+}

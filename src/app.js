@@ -83,7 +83,7 @@ function render() {
   document.querySelector('#app').innerHTML = /* HTML */ `<div class="shell">
     <aside class="sidebar">
       <div class="brand">
-        <span class="brandmark">▧</span>
+        <img class="brandmark" src="/icons/icon.svg?v=2" alt="" width="38" height="38" />
         <div>thumbs<span style="color:#a7d394">.</span><small>STUDIO MANAGER</small></div>
       </div>
       <div class="navlabel">SEU WORKSPACE</div>
