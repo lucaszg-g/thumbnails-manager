@@ -626,8 +626,8 @@ function openForm(type, id) {
                 </select>
               </div>
               <div class="field">
-                <label for="currency">Moeda do pagamento</label
-                ><select id="currency" name="currency">
+                <label for="currency">Moeda definida para o cliente</label
+                ><select id="currency" name="currency" disabled>
                   <option value="USD" ${initialPrice.currency === 'USD' ? 'selected' : ''}>
                     USD · Dólar americano
                   </option>
@@ -638,7 +638,7 @@ function openForm(type, id) {
               </div>
               <div class="formrow">
                 <div class="field">
-                  <label for="value">Valor do trabalho</label
+                  <label for="value">Preço aplicado automaticamente</label
                   ><input
                     id="value"
                     name="value"
@@ -647,6 +647,7 @@ function openForm(type, id) {
                     max="10000000"
                     step="0.01"
                     value="${initialPrice.value}"
+                    readonly
                     required
                   />
                 </div>
@@ -661,13 +662,28 @@ function openForm(type, id) {
                   />
                 </div>
               </div>
+              <p id="client-price-note" class="subtitle" style="margin-bottom:12px">
+                ${
+                  initialPrice.value === ''
+                    ? 'Este cliente ainda precisa de um preço padrão. Defina-o em Clientes → Editar uma única vez.'
+                    : 'Preço do cliente aplicado. Não é necessário preencher novamente.'
+                }
+              </p>
+              <button
+                class="textbutton"
+                id="edit-job-price"
+                type="button"
+                style="margin-bottom:16px;margin-right:12px"
+              >
+                Alterar só este trabalho
+              </button>
               <button
                 class="textbutton"
                 id="use-client-price"
                 type="button"
                 style="margin-bottom:16px"
               >
-                Usar valor padrão do cliente
+                Restaurar preço do cliente
               </button>
               <div class="formrow">
                 <div class="field">
@@ -741,7 +757,7 @@ ${esc(item?.notes || '')}</textarea>
                 />
               </div>
               <div class="field">
-                <label for="defaultValue">Valor padrão por thumbnail (opcional)</label>
+                <label for="defaultValue">Preço deste cliente por thumbnail</label>
                 <input
                   id="defaultValue"
                   name="defaultValue"
@@ -751,9 +767,10 @@ ${esc(item?.notes || '')}</textarea>
                   step="0.01"
                   value="${item?.defaultValue ?? ''}"
                   placeholder="Ex.: 50,00"
+                  required
                 />
                 <small class="subtitle"
-                  >Preenche novas thumbnails. Você pode ajustar o valor em cada trabalho.</small
+                  >Defina uma vez. Todas as novas thumbnails deste cliente usarão este preço.</small
                 >
               </div>
               <div class="field">
@@ -786,10 +803,23 @@ ${esc(item?.notes || '')}</textarea>
       const price = clientPrice(client(modal.querySelector('#clientId').value));
       modal.querySelector('#value').value = price.value;
       modal.querySelector('#currency').value = price.currency;
+      modal.querySelector('#value').readOnly = true;
+      modal.querySelector('#currency').disabled = true;
+      modal.querySelector('#client-price-note').textContent =
+        price.value === ''
+          ? 'Defina o preço deste cliente em Clientes → Editar uma única vez.'
+          : 'Preço do cliente aplicado. Não é necessário preencher novamente.';
     };
-    // Editing an existing job never silently replaces its agreed price.
-    if (!item) modal.querySelector('#clientId').onchange = applyClientPrice;
+    // Opening an existing job keeps its price; choosing another client uses that client's price.
+    modal.querySelector('#clientId').onchange = applyClientPrice;
     modal.querySelector('#use-client-price').onclick = applyClientPrice;
+    modal.querySelector('#edit-job-price').onclick = () => {
+      modal.querySelector('#value').readOnly = false;
+      modal.querySelector('#currency').disabled = false;
+      modal.querySelector('#value').focus();
+      modal.querySelector('#client-price-note').textContent =
+        'Exceção apenas para este trabalho. O preço padrão do cliente será mantido.';
+    };
   }
   modal.querySelector('form').onsubmit = (e) => {
     e.preventDefault();
@@ -797,6 +827,11 @@ ${esc(item?.notes || '')}</textarea>
     const value = Object.fromEntries(f);
     Object.keys(value).forEach((k) => (value[k] = value[k].trim()));
     if (type === 'job') {
+      if (value.value === '') {
+        toast('Defina primeiro o preço padrão deste cliente em Clientes → Editar.');
+        return;
+      }
+      value.currency = modal.querySelector('#currency').value;
       value.elapsedMs = item?.elapsedMs || 0;
       value.timerStartedAt = item?.timerStartedAt || null;
       value.links = item?.links || [];
@@ -810,7 +845,11 @@ ${esc(item?.notes || '')}</textarea>
       if (!value.paid) value.paidAt = null;
     } else {
       if (!value.name) return;
-      value.defaultValue = value.defaultValue === '' ? null : Number(value.defaultValue);
+      if (value.defaultValue === '') {
+        toast('Informe o preço padrão deste cliente. Ele será usado nas novas thumbnails.');
+        return;
+      }
+      value.defaultValue = Number(value.defaultValue);
     }
     value.id = item?.id || crypto.randomUUID();
     const collection = type === 'job' ? data.jobs : data.clients;

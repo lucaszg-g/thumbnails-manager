@@ -63,7 +63,7 @@ O comando `node scripts/verify-deployment.mjs https://thumbs-studio.thumbs-manag
 
 - Painel com ganhos recebidos, saldo a receber, entregas e gráfico de seis meses.
 - Clientes com histórico e valores pendentes por cliente.
-- Valor padrão opcional em USD ou BRL por cliente. Novas thumbnails preenchem o preço ao selecionar o cliente, com edição livre por trabalho. Alterar o padrão do cliente não altera trabalhos existentes.
+- Preço por cliente definido no cadastro, em USD ou BRL. Novas thumbnails usam esse preço automaticamente, sem digitação repetida. Use “Alterar só este trabalho” para uma exceção ou edite o cliente para mudar o padrão das próximas thumbnails. Clientes antigos sem preço devem ser configurados uma única vez. Trabalhos existentes mantêm seus preços.
 - Cadastro e edição de thumbnails, briefing, valor, prazo e etapa.
 - Pagamentos independentes da etapa de produção, com data de recebimento.
 - Agenda com indicação de atrasos, busca e filtros por cliente, mês e etapa.
