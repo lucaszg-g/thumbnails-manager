@@ -24,6 +24,8 @@ O projeto usa JavaScript com módulos nativos, HTML e CSS. Não há framework de
 
 ## Como uma alteração é salva
 
+`backend/calendar.js` implementa o OAuth com state, cookie e PKCE, criptografia de credenciais e sincronização idempotente de uma agenda criada pelo app. `worker.js` aciona o cron de cinco minutos; `backend/api.js` também agenda sincronizações após gravações. A migração `0002_calendar.sql` mantém a conexão e os eventos fora dos registros e dos backups de usuário. `src/calendar-settings.js` contém o guia de autorização e `src/notifications.js` trata apenas avisos locais com consentimento. Os estados derivados de prazo e pagamento estão em `model.js`; o cron não altera etapas de produção nem provoca conflitos na revisão do workspace.
+
 O quadro, os controles rápidos e o painel de atividades são renderizados em `src/workspace.js`; o formulário de adicionais e seu resumo de preço ficam em `src/price-editor.js`. O CSS dessa experiência fica em `src/workspace.css`. As regras de prazo, transição de status e composição do total permanecem em `src/model.js`, compartilhadas com a API. `src/workflow.test.js` verifica os formulários e as ações do quadro com um DOM de teste, sem acessar registros reais.
 
 1. Um formulário ou botão em `app.js` altera os registros do workspace.

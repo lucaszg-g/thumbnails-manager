@@ -63,6 +63,14 @@ export function deadlineState(job, now = Date.now()) {
     return { label: `Faltam ${hours}h${rest ? ` ${rest}min` : ''}`, tone: 'normal' };
   return { label: `${Math.ceil(minutes / 1440)} dias restantes`, tone: 'normal' };
 }
+export function workflowState(job, now = Date.now()) {
+  if (job.status === 'delivered')
+    return job.paid
+      ? { label: 'Concluída', tone: 'done' }
+      : { label: 'Aguardando pagamento', tone: 'pending' };
+  if (dueTimestamp(job) <= now) return { label: 'Atrasada', tone: 'late' };
+  return { label: 'Dentro do prazo', tone: 'normal' };
+}
 export function priceBreakdown(job) {
   const base = job.baseValue ?? job.value ?? 0;
   const extrasCents = (job.extras || []).reduce(

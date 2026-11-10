@@ -1,5 +1,12 @@
 import { esc, money, initials, statuses, duration } from './ui.js';
-import { deadlineState, dueTimestamp, elapsed, priceBreakdown } from './model.js';
+import {
+  deadlineState,
+  dueTimestamp,
+  elapsed,
+  priceBreakdown,
+  totals,
+  workflowState,
+} from './model.js';
 
 export function statusControl(job) {
   return /* HTML */ `<select
@@ -74,6 +81,23 @@ export function viewSwitcher(view) {
     </div>
   </div>`;
 }
+export function renderPaymentSummary(jobs) {
+  const waiting = jobs.filter((job) => job.status === 'delivered' && !job.paid);
+  const usd = totals(waiting, 'USD').pending,
+    brl = totals(waiting, 'BRL').pending;
+  return /* HTML */ `<button class="payment-summary" data-focus="awaiting">
+    <span class="payment-summary-icon">↗</span
+    ><span
+      ><strong>Aguardando pagamento</strong
+      ><small
+        >${waiting.length} ${waiting.length === 1 ? 'thumb entregue' : 'thumbs entregues'} ·
+        atualizado automaticamente ao entregar ou receber</small
+      ></span
+    ><span class="payment-summary-value"
+      ><b>${money(usd, 'USD')}</b><small>+ ${money(brl, 'BRL')}</small></span
+    ><span aria-hidden="true">→</span>
+  </button>`;
+}
 
 export function renderBoard(jobs, clients, options) {
   const filters = [
@@ -82,6 +106,7 @@ export function renderBoard(jobs, clients, options) {
     ['soon', 'Próximas 24h'],
     ['high', 'Prioridade'],
     ['pending', 'A receber'],
+    ['awaiting', 'Entregues a receber'],
   ];
   return /* HTML */ `<section class="board-space">
     <div class="board-tools">
@@ -128,6 +153,7 @@ export function renderBoard(jobs, clients, options) {
                   .map((job) => {
                     const client = clients.find((c) => c.id === job.clientId);
                     const price = priceBreakdown(job);
+                    const automatic = workflowState(job);
                     return /* HTML */ `<article
                       class="job-card"
                       draggable="true"
@@ -149,6 +175,12 @@ export function renderBoard(jobs, clients, options) {
                       <button class="job-card-title" data-edit="${esc(job.id)}">
                         ${esc(job.title)}
                       </button>
+                      <span
+                        class="auto-state"
+                        data-auto-state="${esc(job.id)}"
+                        data-tone="${automatic.tone}"
+                        >${automatic.label}</span
+                      >
                       <div class="card-price">
                         <strong>${money(job.value, job.currency || 'USD')}</strong
                         >${price.extras ? /* HTML */ `<small>Inclui ${money(price.extras, job.currency || 'USD')} em adicionais</small>` : /* HTML */ `<small>Valor do trabalho</small>`}

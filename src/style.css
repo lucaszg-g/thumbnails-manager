@@ -2,7 +2,7 @@
 :root {
   font-family: 'DM Sans', sans-serif;
   color: #22312d;
-  background: #f6f7f9;
+  background: #f7f8f7;
   font-synthesis: none;
   --green: #26725b;
   --muted: #89918e;
@@ -558,8 +558,8 @@ td {
   color: #679267;
 }
 .badge.production {
-  background: #edf1fa;
-  color: #6a86b6;
+  background: #eff8f3;
+  color: #77a98c;
 }
 .badge.review,
 .badge.pending {
@@ -895,26 +895,26 @@ form {
 }
 /* Studio 2: shared surfaces make both themes equally readable. */
 :root {
-  --bg: #f3f5f9;
+  --bg: #f2f6f3;
   --surface: #fff;
-  --surface-alt: #f8f9fc;
-  --text: #23293b;
-  --muted: #768098;
-  --line: #e5e9f2;
-  --accent: #7460e8;
-  --accent-soft: #efecff;
-  --shadow: 0 6px 24px #25254e04;
+  --surface-alt: #f5f8f6;
+  --text: #16392d;
+  --muted: #74877d;
+  --line: #dde8e1;
+  --accent: #2b7657;
+  --accent-soft: #e3f1e7;
+  --shadow: 0 6px 24px #2c473704;
 }
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #0e1018;
-  --surface: #171a26;
-  --surface-alt: #1d2130;
-  --text: #e9ebf5;
-  --muted: #929bb4;
-  --line: #2a2f42;
-  --accent: #a99aff;
-  --accent-soft: #30284f;
+  --bg: #09140f;
+  --surface: #102019;
+  --surface-alt: #162b21;
+  --text: #e3efe7;
+  --muted: #8da697;
+  --line: #253d30;
+  --accent: #8bc59b;
+  --accent-soft: #1d3b2b;
   --shadow: 0 8px 30px #00000012;
 }
 body {
@@ -922,32 +922,32 @@ body {
   color: var(--text);
 }
 .sidebar {
-  background: #111321;
-  border-right: 1px solid #26293b;
+  background: #0c1c13;
+  border-right: 1px solid #203a2b;
 }
 .brandmark {
-  background: #b6a5ff;
-  color: #271e50;
+  background: #b6dfa0;
+  color: #163a25;
 }
 .brand span[style] {
-  color: #b6a5ff !important;
+  color: #b6dfa0 !important;
 }
 .nav button.active {
-  background: #30284f;
-  color: #ded6ff;
+  background: #1d3b2b;
+  color: #ddf0dd;
 }
 .nav .count {
-  background: #443967;
+  background: #2f5238;
 }
 .navlabel {
-  color: #747c99;
+  color: #78917f;
 }
 .localbadge {
-  border-color: #30354a;
+  border-color: #294332;
 }
 .profile .avatar {
-  background: #30284f;
-  color: #d0bfff;
+  background: #1d3b2b;
+  color: #c8e7c4;
 }
 .topbar,
 .panel,
@@ -1011,11 +1011,11 @@ h1 {
   color: var(--accent);
 }
 .primary {
-  background: #8067e8;
+  background: #347b52;
   color: #fff;
   border-radius: 9px;
   padding: 12px 17px;
-  box-shadow: 0 4px 12px #8067e81a;
+  box-shadow: 0 4px 12px #347b521a;
 }
 .secondary,
 .theme-toggle {
@@ -1078,8 +1078,8 @@ button:disabled {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #9a85ed;
-  box-shadow: 0 0 0 4px #a48df016;
+  background: #97dbb3;
+  box-shadow: 0 0 0 4px #86b68d16;
 }
 .focus-banner {
   display: flex;
@@ -1087,7 +1087,7 @@ button:disabled {
   gap: 25px;
   margin-top: 20px;
   padding: 18px 23px;
-  border: 1px solid #8067e850;
+  border: 1px solid #347b5250;
   border-radius: 12px;
   background: var(--accent-soft);
 }
@@ -1183,7 +1183,7 @@ tbody tr:hover {
 .timerbutton.running {
   color: var(--accent);
   background: var(--accent-soft);
-  border-color: #8067e850;
+  border-color: #347b5250;
 }
 .jobtools .textbutton {
   font-size: 10px;
@@ -1208,8 +1208,8 @@ tbody tr:hover {
   color: #c59850;
 }
 .badge.production {
-  background: #8d78db20;
-  color: #a18be7;
+  background: #89caa420;
+  color: #9bd7b4;
 }
 .badge.late {
   background: #c66f781a;
@@ -1229,13 +1229,13 @@ tbody tr:hover {
   color: var(--muted);
 }
 .bar {
-  background: #a997df60;
+  background: #a4d2b760;
 }
 .barwrap:last-child .bar {
-  background: #9580e9;
+  background: #84ad80;
 }
 .dot {
-  background: #9580e9;
+  background: #84ad80;
 }
 .chart {
   border-color: var(--line);
@@ -1259,7 +1259,7 @@ tbody tr:hover {
 .field input:focus,
 .field textarea:focus,
 .link-form input:focus {
-  outline: 2px solid #9b85f36b;
+  outline: 2px solid #84b38b6b;
   border-color: var(--accent);
 }
 .field input[type='color'] {
@@ -1273,7 +1273,7 @@ dialog {
   max-height: 90vh;
 }
 dialog::backdrop {
-  background: #080a17a6;
+  background: #0b140fa6;
   backdrop-filter: blur(6px);
 }
 .modalhead .subtitle {
@@ -1325,7 +1325,7 @@ dialog::backdrop {
   align-items: center;
   flex-direction: column;
   gap: 9px;
-  border: 1px dashed #8067e870;
+  border: 1px dashed #347b5270;
   background: var(--accent-soft);
   border-radius: 11px;
   padding: 22px;
@@ -1414,7 +1414,7 @@ dialog::backdrop {
   color: var(--text);
 }
 #toast {
-  background: #7661ca;
+  background: #73b890;
   box-shadow: 0 5px 25px #0003;
   max-width: 90vw;
   line-height: 1.6;

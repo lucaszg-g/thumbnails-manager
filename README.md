@@ -94,6 +94,24 @@ A API Frankfurter fornece cotação de referência, não valores líquidos de ta
 
 ## Usar os novos recursos
 
+### Google Calendar e notificações
+
+Em **Configurações → Google Calendar**, siga o guia gratuito para criar um cliente OAuth Web no seu próprio projeto Google, habilitar a API Calendar e autorizar a conta. O site não pode reutilizar a conexão Google deste chat. **Os lembretes do Google só ficam ativos após concluir essa configuração.**
+
+URI de redirecionamento: `https://thumbs-studio.thumbs-manager.workers.dev/api/calendar/callback`. O escopo solicitado é apenas `https://www.googleapis.com/auth/calendar.app.created`: o app cria **Thumbs Studio · Prazos** e gerencia eventos nessa agenda separada, sem editar a agenda principal. Desmarque seu nome no Google Calendar para ocultá-la; ocultar não desliga notificações. Configure as notificações na agenda ou remova-a se quiser encerrá-las.
+
+O Worker sincroniza após gravações e por cron a cada cinco minutos, em lotes de até quatro trabalhos modificados por ciclo. As entregas ativas mais próximas têm prioridade. O evento do prazo inclui lembretes de popup em 60, 15 e zero minutos, além de e-mail no horário. Se o prazo vencer sem entrega, é criado um evento de alerta aproximadamente dois minutos após a detecção no próximo ciclo, com popup e e-mail. Ele é deduplicado por trabalho e prazo. Entregar o trabalho remove alertas de atraso pendentes e desativa lembretes do evento da entrega; mensagens já enviadas pelo Google não podem ser recolhidas. Trabalhos removidos do app têm seus eventos gerenciados removidos na sincronização seguinte.
+
+A integração é unidirecional: altere os trabalhos no app. Mudanças no Google não alteram os registros do estúdio. Etapas de produção exigem confirmação humana; o indicador de atraso e “Aguardando pagamento” são calculados automaticamente. O card em Thumbnails reúne entregas sem pagamento e filtra esses trabalhos.
+
+Avisos **neste dispositivo** são opcionais e pedem permissão ao clicar no botão. Funcionam com o app aberto, uma hora antes e após o vencimento, sem repetir o mesmo alerta. Não há Web Push em segundo plano; para avisos com o app fechado, conclua a conexão com o Google. A entrega de notificações depende das permissões e configurações do Google, navegador e sistema operacional.
+
+As credenciais OAuth e os tokens ficam criptografados em tabelas separadas no D1, usando AES-256-GCM. Não entram na API de registros, no backup exportado nem no bundle. A chave de criptografia é o secret `CALENDAR_ENCRYPTION_KEY`; a cópia local está em `data/calendar-encryption-key.txt`, ignorada pelo Git. Preserve essa chave em atualizações. `node scripts/prepare-key.mjs` prepara os secrets sem imprimi-los e rejeita chaves locais inconsistentes. Execute as migrações antes de publicar novas versões. O modo local não conecta o Google por padrão; faça a configuração no endereço HTTPS publicado.
+
+No modo OAuth **Testing**, o Google pode expirar o refresh token após sete dias. Para uso contínuo, configure o status de publicação conforme as regras do Google; o botão Reconectar restaura autorizações expiradas. Desconectar remove as credenciais do app e tenta revogar a permissão, mas mantém os eventos já criados no Google.
+
+Referências: [escopo restrito às agendas do app](https://developers.google.com/workspace/calendar/api/auth), [OAuth offline](https://developers.google.com/identity/protocols/oauth2/web-server), [limites e custo da API Calendar](https://developers.google.com/workspace/calendar/api/guides/quota).
+
 Use o botão Claro/Escuro no topo para alternar o tema. Na edição de cada thumbnail escolha a moeda, e na tabela use ▷ para iniciar o cronômetro ou “anexos” para salvar arquivos e links. O contato adicional fica no cadastro do cliente. A cotação pode ser atualizada pela faixa no topo ou por Configurações.
 
 As fontes do Google são opcionais e têm alternativas locais. O carregamento offline mantém a interface; as APIs privadas nunca entram no cache do service worker.

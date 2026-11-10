@@ -1,3 +1,5 @@
+import { renderCalendarSettings, bindCalendarSettings } from './calendar-settings.js';
+import { checkDeadlineNotifications } from './notifications.js';
 import {
   statusControl,
   dueBadge,
@@ -5,6 +7,7 @@ import {
   viewSwitcher,
   renderBoard,
   renderActivity,
+  renderPaymentSummary,
 } from './workspace.js';
 import { extrasSection, bindPriceEditor } from './price-editor.js';
 import { labels, statuses, icon, esc, money, date, initials, duration } from './ui.js';
@@ -25,6 +28,7 @@ import {
   deadlineState,
   priceBreakdown,
   setJobStatus,
+  workflowState,
 } from './model.js';
 // Workspace state and local recovery
 const KEY = 'thumbs-studio-v1';
@@ -99,7 +103,7 @@ function render() {
   document.querySelector('#app').innerHTML = /* HTML */ `<div class="shell">
     <aside class="sidebar">
       <div class="brand">
-        <img class="brandmark" src="/icons/icon.svg?v=2" alt="" width="38" height="38" />
+        <img class="brandmark" src="/icons/icon.svg?v=3" alt="" width="38" height="38" />
         <div>thumbs<span style="color:#a7d394">.</span><small>STUDIO MANAGER</small></div>
       </div>
       <div class="navlabel">SEU WORKSPACE</div>
@@ -161,6 +165,7 @@ function render() {
   bindExtras();
   bindCloud();
   bindWorkspace();
+  if (page === 'settings' && !locked()) bindCalendarSettings(api, render, toast);
   updateClocks();
 }
 // Page sections and views
@@ -308,6 +313,7 @@ function visibleJobs() {
       (j) =>
         (filter === 'all' ||
           (filter === 'pending' && !j.paid) ||
+          (filter === 'awaiting' && j.status === 'delivered' && !j.paid) ||
           (filter === 'late' && deadlineState(j).tone === 'late') ||
           (filter === 'soon' && deadlineState(j).tone === 'urgent') ||
           (filter === 'high' && j.priority === 'high') ||
@@ -489,6 +495,7 @@ function content() {
   if (page === 'jobs')
     return (
       heading('Seu fluxo criativo', 'Do briefing à entrega, um passo de cada vez.') +
+      renderPaymentSummary(selectedJobs()) +
       viewSwitcher(jobView) +
       (jobView === 'board'
         ? renderBoard(visibleJobs(), data.clients, { filter, query, clientFilter })
@@ -555,6 +562,7 @@ function content() {
       ${!data.clients.length ? '<div class="panel empty"><strong>Vamos conhecer seus clientes?</strong>Cadastre o primeiro cliente para começar a organizar seus trabalhos.</div>' : ''}`;
   return (
     heading('Do seu jeito', 'Ajustes do workspace e segurança dos seus dados.', false) +
+    renderCalendarSettings() +
     /* HTML */ `<section class="panel settings">
       <h2>Conversão automática USD → BRL</h2>
       <p>
@@ -1089,6 +1097,14 @@ function activeTimer() {
     : '';
 }
 function updateClocks() {
+  document.querySelectorAll('[data-auto-state]').forEach((element) => {
+    const job = data.jobs.find((j) => j.id === element.dataset.autoState);
+    if (job) {
+      const automatic = workflowState(job);
+      element.textContent = automatic.label;
+      element.dataset.tone = automatic.tone;
+    }
+  });
   document.querySelectorAll('[data-due]').forEach((element) => {
     const job = data.jobs.find((j) => j.id === element.dataset.due);
     if (job) {
@@ -1777,6 +1793,8 @@ function action(name) {
   }
 }
 
+if (window.location?.hash === '#calendar-settings') page = 'settings';
+if (window.location?.hash === '#thumbnails') page = 'jobs';
 // Application startup
 
 render();
@@ -1831,3 +1849,7 @@ window.addEventListener('beforeunload', (event) => {
     event.returnValue = '';
   }
 });
+
+setInterval(() => {
+  if (!locked() && !corrupt) void checkDeadlineNotifications(data.jobs);
+}, 60000);

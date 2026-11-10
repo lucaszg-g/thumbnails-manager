@@ -1,6 +1,6 @@
 /* The interactive workspace layer: dashboard, board, inline controls and pricing. */
 :root {
-  --accent-bright: #bba7ff;
+  --accent-bright: #b6f0ce;
   --studio-radius: 20px;
 }
 .content {
@@ -14,10 +14,10 @@
   grid-template-columns: 1fr 0.9fr;
   gap: 40px;
   padding: 38px 40px;
-  border: 1px solid #aa8bf536;
+  border: 1px solid #9ee2ba36;
   border-radius: var(--studio-radius);
   background:
-    radial-gradient(ellipse at 75% 25%, #8e61e72b, transparent 65%),
+    radial-gradient(ellipse at 75% 25%, #78d09d2b, transparent 65%),
     linear-gradient(120deg, var(--surface), var(--accent-soft));
   position: relative;
   overflow: hidden;
@@ -28,7 +28,7 @@
   position: absolute;
   width: 300px;
   height: 300px;
-  border: 1px solid #ad8cf313;
+  border: 1px solid #9ee1ba13;
   border-radius: 70px;
   transform: rotate(25deg);
   right: -120px;
@@ -110,7 +110,7 @@ kbd {
   display: block;
   height: 100%;
   border-radius: 8px;
-  background: linear-gradient(90deg, #8266db, #ccb3ff);
+  background: linear-gradient(90deg, #7ac79a, #c0f2d5);
 }
 .hero-progress > small {
   font-size: 10px;
@@ -126,8 +126,8 @@ kbd {
   padding: 13px 10px;
   text-align: left;
   border-radius: 10px;
-  background: #8f73ce0b;
-  border: 1px solid #a489e817;
+  background: #83be9c0b;
+  border: 1px solid #9ad7b317;
 }
 .hero-counters strong {
   font: 750 23px Manrope;
@@ -141,7 +141,7 @@ kbd {
 }
 .hero-counters button:hover {
   background: var(--accent-soft);
-  border-color: #a489e85e;
+  border-color: #9ad7b35e;
 }
 .work-viewbar {
   display: flex;
@@ -250,12 +250,12 @@ kbd {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #8392a7;
+  background: #89a193;
   flex-shrink: 0;
 }
 .column-dot.production {
-  background: #a98ae9;
-  box-shadow: 0 0 0 4px #a98ae911;
+  background: #9bd8b4;
+  box-shadow: 0 0 0 4px #9bd8b411;
 }
 .column-dot.review {
   background: #e2b369;
@@ -282,7 +282,7 @@ kbd {
   cursor: grab;
 }
 .job-card:hover {
-  border-color: #a98ae94a;
+  border-color: #9bd8b44a;
   box-shadow: 0 6px 20px #00000012;
   transform: translateY(-3px);
 }
@@ -402,8 +402,8 @@ kbd {
   max-width: none;
 }
 .status-control.production {
-  color: #ae92eb;
-  background: #a98ae910;
+  color: #a2dbba;
+  background: #9bd8b410;
 }
 .status-control.review {
   color: #c79b5c;
@@ -891,5 +891,195 @@ dialog {
   .job-card,
   .kanban-column {
     transition: none;
+  }
+}
+.payment-summary {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-align: left;
+  padding: 20px 22px;
+  margin: 0 0 23px;
+  background: linear-gradient(115deg, var(--accent-soft), var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+  border-radius: 14px;
+}
+.payment-summary-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+  font-size: 23px;
+  flex-shrink: 0;
+}
+.payment-summary strong {
+  font-size: 13px;
+  display: block;
+}
+.payment-summary small {
+  display: block;
+  margin-top: 7px;
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.payment-summary-value {
+  margin-left: auto;
+  white-space: nowrap;
+  text-align: right;
+}
+.payment-summary-value b {
+  font: 700 18px Manrope;
+  color: var(--accent);
+}
+.payment-summary-value small {
+  margin-top: 4px;
+}
+.payment-summary > span:last-child {
+  color: var(--accent);
+}
+.auto-state {
+  font-size: 8px;
+  display: inline-flex;
+  padding: 4px 7px;
+  border-radius: 5px;
+  color: var(--muted);
+  background: var(--surface-alt);
+  margin: 0 0 10px;
+}
+.auto-state[data-tone='late'] {
+  color: #d58e8e;
+  background: #d58e8e12;
+}
+.auto-state[data-tone='pending'] {
+  color: #c8a669;
+  background: #c8a66912;
+}
+.auto-state[data-tone='done'] {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.calendar-settings {
+  margin-bottom: 24px;
+}
+.calendar-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.calendar-title .eyebrow {
+  font-size: 9px;
+  margin-bottom: 8px;
+}
+.calendar-benefits {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 15px 0 20px;
+}
+.calendar-benefits span {
+  font-size: 9px;
+  color: var(--accent);
+  padding: 7px 9px;
+  background: var(--accent-soft);
+  border-radius: 6px;
+}
+.calendar-guide {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 15px;
+  margin: 18px 0;
+  background: var(--surface-alt);
+}
+.calendar-guide summary {
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--accent);
+}
+.calendar-guide ol {
+  padding-left: 20px;
+  margin: 20px 0 0;
+}
+.calendar-guide li {
+  padding: 0 0 14px 4px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.9;
+}
+.calendar-guide strong {
+  color: var(--text);
+}
+.calendar-guide code {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 10px;
+  background: var(--surface);
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 6px;
+  color: var(--accent);
+}
+.calendar-guide p {
+  font-size: 10px !important;
+  margin-bottom: 0 !important;
+}
+.calendar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.calendar-actions a {
+  text-decoration: none;
+}
+.calendar-help,
+.calendar-last-sync {
+  font-size: 10px !important;
+}
+.calendar-settings hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 25px 0;
+}
+.calendar-settings #calendar-setup {
+  padding: 0;
+  margin: 20px 0;
+}
+@media (max-width: 760px) {
+  .payment-summary {
+    padding: 16px 14px;
+    gap: 10px;
+  }
+  .payment-summary-icon {
+    width: 31px;
+    height: 31px;
+    font-size: 19px;
+  }
+  .payment-summary strong {
+    font-size: 11px;
+  }
+  .payment-summary small {
+    font-size: 9px;
+  }
+  .payment-summary-value b {
+    font-size: 15px;
+  }
+  .payment-summary > span:last-child {
+    display: none;
+  }
+  .calendar-title {
+    align-items: flex-start;
+  }
+  .calendar-benefits span {
+    font-size: 8px;
+  }
+  .calendar-guide {
+    padding: 12px;
   }
 }

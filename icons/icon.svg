@@ -1,21 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
   <defs>
     <linearGradient id="background" x1="40" y1="12" x2="456" y2="512" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#151326"/>
-      <stop offset="1" stop-color="#35245D"/>
+      <stop stop-color="#0A1B12"/>
+      <stop offset="1" stop-color="#173E27"/>
     </linearGradient>
     <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(280 310) rotate(90) scale(240)">
-      <stop stop-color="#9470FF" stop-opacity=".34"/>
-      <stop offset="1" stop-color="#9470FF" stop-opacity="0"/>
+      <stop stop-color="#75B887" stop-opacity=".34"/>
+      <stop offset="1" stop-color="#75B887" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="frame" x1="128" y1="165" x2="383" y2="350" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FAF7FF"/>
-      <stop offset="1" stop-color="#CFC1FF"/>
+      <stop stop-color="#F2F9E9"/>
+      <stop offset="1" stop-color="#B9D6AF"/>
     </linearGradient>
     <linearGradient id="screen" x1="151" y1="185" x2="368" y2="336" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#B89BFF"/>
-      <stop offset=".55" stop-color="#8A5EF0"/>
-      <stop offset="1" stop-color="#6235C4"/>
+      <stop stop-color="#98C694"/>
+      <stop offset=".55" stop-color="#528D5C"/>
+      <stop offset="1" stop-color="#2F6642"/>
     </linearGradient>
     <filter id="shadow" x="40" y="94" width="430" height="370" filterUnits="userSpaceOnUse">
       <feDropShadow dy="20" stdDeviation="18" flood-color="#080616" flood-opacity=".55"/>
@@ -23,21 +23,21 @@
   </defs>
   <rect width="512" height="512" fill="url(#background)"/>
   <rect width="512" height="512" fill="url(#glow)"/>
-  <rect x="19" y="19" width="474" height="474" rx="103" stroke="#D5C7FF" stroke-opacity=".08" stroke-width="2"/>
+  <rect x="19" y="19" width="474" height="474" rx="103" stroke="#BAD9BF" stroke-opacity=".08" stroke-width="2"/>
   <g transform="rotate(9 256 264)">
-    <rect x="113" y="157" width="292" height="216" rx="38" fill="#A087ED" fill-opacity=".16" stroke="#C0A9FF" stroke-opacity=".24" stroke-width="3"/>
+    <rect x="113" y="157" width="292" height="216" rx="38" fill="#739D79" fill-opacity=".16" stroke="#9BC9A4" stroke-opacity=".24" stroke-width="3"/>
   </g>
   <g filter="url(#shadow)">
     <g transform="rotate(-9 256 256)">
       <rect x="109" y="154" width="294" height="212" rx="37" fill="url(#frame)"/>
       <rect x="122" y="167" width="268" height="186" rx="26" fill="url(#screen)"/>
-      <path d="M134 306L194 236C199 230 208 230 213 236L264 296L297 258C302 252 311 252 316 258L378 329V340H134V306Z" fill="#D6C4FF" fill-opacity=".15"/>
-      <circle cx="336" cy="208" r="15" fill="#F1E9FF" fill-opacity=".3"/>
+      <path d="M134 306L194 236C199 230 208 230 213 236L264 296L297 258C302 252 311 252 316 258L378 329V340H134V306Z" fill="#B9DDB6" fill-opacity=".15"/>
+      <circle cx="336" cy="208" r="15" fill="#E5F2D8" fill-opacity=".3"/>
       <circle cx="251" cy="256" r="49" fill="#FFF" fill-opacity=".12" stroke="#FFF" stroke-opacity=".25" stroke-width="2"/>
       <path d="M239 232C239 228 243 226 247 228L282 250C286 253 286 259 282 262L247 284C243 286 239 284 239 280V232Z" fill="#FFF"/>
     </g>
   </g>
   <path d="M378 109C378 129 370 137 350 137C370 137 378 145 378 165C378 145 386 137 406 137C386 137 378 129 378 109Z" fill="#D5F9A5"/>
-  <circle cx="130" cy="387" r="5" fill="#C1AFF6" fill-opacity=".65"/>
-  <rect x="148" y="383" width="45" height="8" rx="4" fill="#C1AFF6" fill-opacity=".22"/>
+  <circle cx="130" cy="387" r="5" fill="#A7CAA0" fill-opacity=".65"/>
+  <rect x="148" y="383" width="45" height="8" rx="4" fill="#A7CAA0" fill-opacity=".22"/>
 </svg>

@@ -122,6 +122,15 @@ test('formulário aplica preço do cliente, soma adicionais e permite atualizar 
     assert.equal(copy.status, 'briefing');
     assert.equal(copy.paid, false);
     assert.deepEqual(Array.from(copy.files), []);
+    const delivered = q(`[data-status="${job.id}"]`);
+    delivered.value = 'delivered';
+    delivered.dispatchEvent(new window.Event('change', { bubbles: true }));
+    assert.match(q('.payment-summary').textContent, /1 thumb entregue/);
+    q('.payment-summary').click();
+    assert.equal(document.querySelectorAll('.job-card').length, 1);
+    q(`[data-paid="${job.id}"]`).click();
+    assert.match(q('.payment-summary').textContent, /0 thumbs entregues/);
+    assert.equal(document.querySelectorAll('.job-card').length, 0);
   } finally {
     window.close();
   }

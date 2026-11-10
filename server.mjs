@@ -24,6 +24,8 @@ const publicFiles = new Set([
   '/src/app.js',
   '/src/ui.js',
   '/src/workspace.js',
+  '/src/calendar-settings.js',
+  '/src/notifications.js',
   '/src/price-editor.js',
   '/src/workspace.css',
   '/src/model.js',

@@ -1,4 +1,5 @@
 import { validate } from '../src/model.js';
+import { calendarCallback, handleCalendarAPI, syncCalendar } from './calendar.js';
 export const CHUNK_SIZE = 512 * 1024;
 const MAX_FILE = 20 * 1024 * 1024,
   MAX_STORAGE = 200 * 1024 * 1024;
@@ -22,10 +23,11 @@ async function limitedJSON(request, max = 1024 * 1024) {
   if (bytes.byteLength > max) throw new Error('payload');
   return JSON.parse(new TextDecoder().decode(bytes));
 }
-export async function handleAPI(request, env) {
+export async function handleAPI(request, env, ctx) {
   const url = new URL(request.url),
     path = url.pathname;
   if (!path.startsWith('/api/')) return null;
+  if (path === '/api/calendar/callback') return calendarCallback(request, env, ctx);
   if (path === '/api/config' && request.method === 'GET')
     return json({
       database: true,
@@ -41,6 +43,8 @@ export async function handleAPI(request, env) {
   if (!env.LOCAL && !(await authorized(request, env.ACCESS_KEY)))
     return json({ error: 'Senha incorreta. Tente novamente.' }, 401);
   try {
+    const calendarResponse = await handleCalendarAPI(request, env, ctx);
+    if (calendarResponse) return calendarResponse;
     const db = env.DB;
     if (path === '/api/state' && request.method === 'GET') {
       const row = await db
@@ -79,6 +83,7 @@ export async function handleAPI(request, env) {
           },
           409,
         );
+      ctx?.waitUntil?.(syncCalendar(env, new URL(request.url).origin));
       return json({ revision: body.revision + 1 });
     }
     if (path === '/api/storage' && request.method === 'GET') {
