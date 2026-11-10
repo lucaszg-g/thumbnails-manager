@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { totals, validate, migrate, elapsed, toggleTimer, safeURL } from './model.js';
+import { totals, validate, migrate, elapsed, toggleTimer, safeURL, clientPrice } from './model.js';
 const fixture = () => ({
   rate: 5.2,
   clients: [{ id: '1', name: 'Canal', email: '', color: '#123456' }],
@@ -18,6 +18,33 @@ const fixture = () => ({
       notes: '',
     },
   ],
+});
+test('preço padrão respeita moeda, aceita zero e preserva trabalhos já negociados', () => {
+  const client = { defaultValue: 75, defaultCurrency: 'BRL' };
+  assert.deepEqual(clientPrice(client), { value: 75, currency: 'BRL' });
+  assert.deepEqual(clientPrice({ defaultValue: 0, defaultCurrency: 'USD' }), {
+    value: 0,
+    currency: 'USD',
+  });
+  assert.deepEqual(clientPrice({}), { value: '', currency: 'USD' });
+  assert.deepEqual(clientPrice(client, { value: 120, currency: 'USD' }), {
+    value: 120,
+    currency: 'USD',
+  });
+  const legacy = migrate(fixture());
+  assert.equal(legacy.clients[0].defaultValue, null);
+  assert.equal(legacy.clients[0].defaultCurrency, 'USD');
+  assert.equal(validate(legacy), true);
+  for (const value of [-1, Infinity, '50', 10000001]) {
+    const data = migrate(fixture());
+    data.clients[0].defaultValue = value;
+    assert.equal(validate(data), false);
+  }
+  legacy.clients[0].defaultValue = 0;
+  legacy.clients[0].defaultCurrency = 'BRL';
+  assert.equal(validate(legacy), true);
+  legacy.clients[0].defaultCurrency = 'EUR';
+  assert.equal(validate(legacy), false);
 });
 test('separa recebimentos de valores pendentes sem depender da entrega', () => {
   assert.deepEqual(

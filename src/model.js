@@ -37,10 +37,20 @@ export function safeURL(value) {
     return null;
   }
 }
+// Existing work keeps its negotiated price; defaults only seed a new job.
+export function clientPrice(client, job) {
+  if (job) return { value: job.value, currency: job.currency || 'USD' };
+  return { value: client?.defaultValue ?? '', currency: client?.defaultCurrency || 'USD' };
+}
 export function migrate(data) {
   return {
     ...data,
-    clients: data.clients.map((c) => ({ ...c, contact: c.contact || '' })),
+    clients: data.clients.map((c) => ({
+      ...c,
+      contact: c.contact || '',
+      defaultValue: c.defaultValue ?? null,
+      defaultCurrency: c.defaultCurrency || 'USD',
+    })),
     jobs: data.jobs.map((j) => ({
       ...j,
       currency: j.currency || 'USD',
@@ -73,6 +83,9 @@ export function validate(data) {
         c.name.trim() &&
         typeof c.email === 'string' &&
         (c.contact === undefined || typeof c.contact === 'string') &&
+        (c.defaultValue == null ||
+          (Number.isFinite(c.defaultValue) && c.defaultValue >= 0 && c.defaultValue <= 10000000)) &&
+        (c.defaultCurrency === undefined || ['USD', 'BRL'].includes(c.defaultCurrency)) &&
         typeof c.color === 'string' &&
         /^#[0-9a-f]{6}$/i.test(c.color),
     ) &&

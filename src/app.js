@@ -1,7 +1,16 @@
 import { labels, statuses, icon, esc, money, date, initials, duration } from './ui.js';
 import { connect, queue, syncState, login, retry, reloadServer, api } from './sync.js';
 import { getFile, putFiles, removeFiles, toDataURL } from './storage.js';
-import { today, totals, validate, migrate, elapsed, toggleTimer, safeURL } from './model.js';
+import {
+  today,
+  totals,
+  validate,
+  migrate,
+  elapsed,
+  toggleTimer,
+  safeURL,
+  clientPrice,
+} from './model.js';
 // Workspace state and local recovery
 const KEY = 'thumbs-studio-v1';
 const blank = () => ({ clients: [], jobs: [], rate: 5.2 });
@@ -471,6 +480,13 @@ function content() {
             return /* HTML */ `<article class="panel clientcard">
               ${avatar(c)}
               <h2>${esc(c.name)}</h2>
+              <p style="margin:8px 0;color:var(--accent)">
+                ${
+                  c.defaultValue == null
+                    ? 'Valor padrão não definido'
+                    : `Valor padrão: ${money(c.defaultValue, c.defaultCurrency || 'USD')}`
+                }
+              </p>
               <p>
                 ${esc(c.email) || 'Sem e-mail'}<br /><span class="contactline"
                   >${esc(c.contact || 'Sem outro contato')}</span
@@ -579,6 +595,8 @@ function openForm(type, id) {
     return;
   }
   const item = (type === 'job' ? data.jobs : data.clients).find((x) => x.id === id);
+  const selectedClientId = item?.clientId || clientFilter || data.clients[0]?.id;
+  const initialPrice = clientPrice(client(selectedClientId), type === 'job' ? item : undefined);
   const modal = document.querySelector('#modal');
   modal.innerHTML = /* HTML */ `<div class="modalhead">
       <h2>
@@ -604,16 +622,16 @@ function openForm(type, id) {
               <div class="field">
                 <label for="clientId">Cliente</label
                 ><select id="clientId" name="clientId">
-                  ${data.clients.map((c) => /* HTML */ `<option value="${esc(c.id)}" ${item?.clientId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
+                  ${data.clients.map((c) => /* HTML */ `<option value="${esc(c.id)}" ${selectedClientId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
                 </select>
               </div>
               <div class="field">
                 <label for="currency">Moeda do pagamento</label
                 ><select id="currency" name="currency">
-                  <option value="USD" ${(item?.currency || 'USD') === 'USD' ? 'selected' : ''}>
+                  <option value="USD" ${initialPrice.currency === 'USD' ? 'selected' : ''}>
                     USD · Dólar americano
                   </option>
-                  <option value="BRL" ${item?.currency === 'BRL' ? 'selected' : ''}>
+                  <option value="BRL" ${initialPrice.currency === 'BRL' ? 'selected' : ''}>
                     BRL · Real brasileiro
                   </option>
                 </select>
@@ -628,7 +646,7 @@ function openForm(type, id) {
                     min="0"
                     max="10000000"
                     step="0.01"
-                    value="${item?.value ?? ''}"
+                    value="${initialPrice.value}"
                     required
                   />
                 </div>
@@ -643,6 +661,14 @@ function openForm(type, id) {
                   />
                 </div>
               </div>
+              <button
+                class="textbutton"
+                id="use-client-price"
+                type="button"
+                style="margin-bottom:16px"
+              >
+                Usar valor padrão do cliente
+              </button>
               <div class="formrow">
                 <div class="field">
                   <label for="status">Etapa do trabalho</label
@@ -715,6 +741,36 @@ ${esc(item?.notes || '')}</textarea>
                 />
               </div>
               <div class="field">
+                <label for="defaultValue">Valor padrão por thumbnail (opcional)</label>
+                <input
+                  id="defaultValue"
+                  name="defaultValue"
+                  type="number"
+                  min="0"
+                  max="10000000"
+                  step="0.01"
+                  value="${item?.defaultValue ?? ''}"
+                  placeholder="Ex.: 50,00"
+                />
+                <small class="subtitle"
+                  >Preenche novas thumbnails. Você pode ajustar o valor em cada trabalho.</small
+                >
+              </div>
+              <div class="field">
+                <label for="defaultCurrency">Moeda do valor padrão</label>
+                <select id="defaultCurrency" name="defaultCurrency">
+                  <option
+                    value="USD"
+                    ${(item?.defaultCurrency || 'USD') === 'USD' ? 'selected' : ''}
+                  >
+                    USD · Dólar americano
+                  </option>
+                  <option value="BRL" ${item?.defaultCurrency === 'BRL' ? 'selected' : ''}>
+                    BRL · Real brasileiro
+                  </option>
+                </select>
+              </div>
+              <div class="field">
                 <label for="color">Cor do cliente</label
                 ><input id="color" name="color" type="color" value="${item?.color || '#538579'}" />
               </div>`
@@ -725,6 +781,16 @@ ${esc(item?.notes || '')}</textarea>
       </div>
     </form>`;
   modal.querySelectorAll('[data-close]').forEach((b) => (b.onclick = () => modal.close()));
+  if (type === 'job') {
+    const applyClientPrice = () => {
+      const price = clientPrice(client(modal.querySelector('#clientId').value));
+      modal.querySelector('#value').value = price.value;
+      modal.querySelector('#currency').value = price.currency;
+    };
+    // Editing an existing job never silently replaces its agreed price.
+    if (!item) modal.querySelector('#clientId').onchange = applyClientPrice;
+    modal.querySelector('#use-client-price').onclick = applyClientPrice;
+  }
   modal.querySelector('form').onsubmit = (e) => {
     e.preventDefault();
     const f = new FormData(e.target);
@@ -742,8 +808,9 @@ ${esc(item?.notes || '')}</textarea>
         return;
       }
       if (!value.paid) value.paidAt = null;
-    } else if (!value.name) {
-      return;
+    } else {
+      if (!value.name) return;
+      value.defaultValue = value.defaultValue === '' ? null : Number(value.defaultValue);
     }
     value.id = item?.id || crypto.randomUUID();
     const collection = type === 'job' ? data.jobs : data.clients;
