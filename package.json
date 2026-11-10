@@ -1,0 +1,24 @@
+{
+  "name": "thumbs-manager",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node server.mjs",
+    "test": "node --test",
+    "build": "node scripts/build.mjs",
+    "cloud:dev": "npm run build && wrangler dev",
+    "cloud:deploy": "npm run build && wrangler deploy",
+    "db:migrate": "wrangler d1 migrations apply thumbs-studio --remote",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10",
+    "wrangler": "^4.159.0"
+  }
+}
