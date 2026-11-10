@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { openDatabase } from './sqlite.js';
 import { handleAPI, CHUNK_SIZE } from './api.js';
-const key = 'a-long-random-test-key-1234567890123456789';
+const key = 'test1234';
 const state = () => ({
   clients: [{ id: 'c', name: 'Cliente', email: '', color: '#123456' }],
   jobs: [],
@@ -27,6 +27,9 @@ test('autorização, gravação persistente e conflito entre dispositivos', asyn
   let env = { DB: db, ACCESS_KEY: key };
   try {
     assert.equal((await handleAPI(request('state', 'GET', undefined, false), env)).status, 401);
+    const wrongPassword = request('state');
+    wrongPassword.headers.set('Authorization', 'Bearer incorrect-password');
+    assert.equal((await handleAPI(wrongPassword, env)).status, 401);
     const cross = request('state');
     cross.headers.set('Origin', 'https://evil.example');
     assert.equal((await handleAPI(cross, env)).status, 403);

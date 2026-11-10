@@ -537,7 +537,7 @@ function content() {
       <h2>Seu app, em qualquer lugar</h2>
       <p>
         Instale pelo menu do navegador: “Instalar aplicativo” no Chrome/Edge ou “Adicionar à Tela de
-        Início” no Safari. No computador e no celular, use o mesmo endereço e a mesma chave para
+        Início” no Safari. No computador e no celular, use o mesmo endereço e a mesma senha para
         acessar seus dados.
       </p>
       <button class="secondary" data-action="install">Instalar aplicativo</button>
@@ -786,19 +786,17 @@ function syncBanner() {
     return /* HTML */ `<section class="cloud-login">
       <span class="eyebrow">SEU ESTÚDIO PRIVADO</span>
       <h2>Acesse seu workspace</h2>
-      <p>
-        Use a chave privada configurada na publicação. Ela fica somente nesta sessão do navegador.
-      </p>
+      <p>Use sua senha para acessar o estúdio. Ela fica somente nesta sessão do navegador.</p>
       <form id="cloud-login">
-        <label for="access-key">Chave de acesso</label>
+        <label for="access-key">Senha</label>
         <div>
           <input
             id="access-key"
             type="password"
-            minlength="32"
+            minlength="6"
             required
             autocomplete="current-password"
-            placeholder="Sua chave privada"
+            placeholder="Digite sua senha"
           /><button class="primary">Entrar</button>
         </div>
       </form>

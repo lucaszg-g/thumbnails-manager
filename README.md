@@ -20,7 +20,7 @@ Abra http://localhost:3000. O banco local fica em `data/thumbs.sqlite` e permane
 
 O app usa Cloudflare Workers + D1 no plano Free, sem R2 e sem domínio pago. Pode ser aberto sem manter seu computador ligado. Nenhum plano gratuito garante disponibilidade ininterrupta: limites, manutenção e mudanças do provedor ainda se aplicam.
 
-Entre com a chave privada em `data/access-key.txt`. Ela e o arquivo de secrets são ignorados pelo Git e não entram no pacote público. Guarde essa chave em um gerenciador de senhas; quem a tiver poderá acessar seu workspace. Ela permanece apenas na sessão do navegador, e pode ser solicitada novamente ao reabrir. Não compartilhe a chave nem a coloque na URL. Para revogá-la, atualize `ACCESS_KEY` com `npx wrangler secret put ACCESS_KEY` e use a nova chave nos seus dispositivos.
+Entre com sua senha. A cópia local em `data/access-key.txt` e o arquivo de secrets são ignorados pelo Git e não entram no pacote público. A senha permanece apenas na sessão do navegador e pode ser solicitada novamente ao reabrir. Para alterá-la, atualize o secret `ACCESS_KEY` com `npx wrangler secret put ACCESS_KEY` e use a nova senha nos seus dispositivos. O nome técnico do secret foi mantido por compatibilidade; o acesso aceita senhas a partir de seis caracteres.
 
 No Chrome/Edge, use **Instalar aplicativo**. No iPhone, use **Compartilhar → Adicionar à Tela de Início**. O app abre em sua própria janela, tem temas claro/escuro e adapta a tabela para cartões no celular.
 

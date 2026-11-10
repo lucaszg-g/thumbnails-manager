@@ -8,7 +8,7 @@ const json = (body, status = 200) =>
     headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },
   });
 async function authorized(request, secret) {
-  if (!secret || secret.length < 32) return false;
+  if (!secret || secret.length < 6) return false;
   const value = request.headers.get('Authorization')?.replace(/^Bearer /, '') || '';
   const hash = async (text) =>
     new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)));
@@ -39,7 +39,7 @@ export async function handleAPI(request, env) {
   )
     return json({ error: 'Origem não permitida.' }, 403);
   if (!env.LOCAL && !(await authorized(request, env.ACCESS_KEY)))
-    return json({ error: 'Informe sua chave de acesso.' }, 401);
+    return json({ error: 'Senha incorreta. Tente novamente.' }, 401);
   try {
     const db = env.DB;
     if (path === '/api/state' && request.method === 'GET') {

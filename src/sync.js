@@ -85,7 +85,7 @@ export async function connect(localData, onData, onStatus) {
     configureRemote(remoteFile);
     await load();
   } catch (error) {
-    if (error.status === 401) status('locked', 'Entre com sua chave de acesso');
+    if (error.status === 401) status('locked', 'Entre com sua senha');
     else status('offline', 'Sem conexão · cópia local');
   }
 }

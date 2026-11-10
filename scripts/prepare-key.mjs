@@ -9,7 +9,7 @@ try {
   key = randomBytes(32).toString('base64url');
   await writeFile(file, key + '\n', { mode: 0o600 });
 }
-if (key.length < 32) throw Error('Chave local inválida. Não foi alterada.');
+if (key.length < 6) throw Error('Senha local inválida. Não foi alterada.');
 await writeFile(
   new URL('../data/cloudflare-secrets.json', import.meta.url),
   JSON.stringify({ ACCESS_KEY: key }),
