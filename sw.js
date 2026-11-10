@@ -1,9 +1,12 @@
-const CACHE = 'thumbs-studio-v5';
+const CACHE = 'thumbs-studio-v6';
 const SHELL = [
   '/',
   '/index.html',
   '/src/app.js',
   '/src/ui.js',
+  '/src/workspace.js',
+  '/src/price-editor.js',
+  '/src/workspace.css',
   '/src/model.js',
   '/src/storage.js',
   '/src/sync.js',

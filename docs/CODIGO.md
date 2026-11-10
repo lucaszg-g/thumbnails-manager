@@ -24,6 +24,8 @@ O projeto usa JavaScript com módulos nativos, HTML e CSS. Não há framework de
 
 ## Como uma alteração é salva
 
+O quadro, os controles rápidos e o painel de atividades são renderizados em `src/workspace.js`; o formulário de adicionais e seu resumo de preço ficam em `src/price-editor.js`. O CSS dessa experiência fica em `src/workspace.css`. As regras de prazo, transição de status e composição do total permanecem em `src/model.js`, compartilhadas com a API. `src/workflow.test.js` verifica os formulários e as ações do quadro com um DOM de teste, sem acessar registros reais.
+
 1. Um formulário ou botão em `app.js` altera os registros do workspace.
 2. `model.js` valida os dados e aplica as regras de negócio.
 3. `persist()` salva uma cópia no navegador e chama a fila em `sync.js`.

@@ -39,8 +39,51 @@ export function safeURL(value) {
 }
 // Existing work keeps its negotiated price; defaults only seed a new job.
 export function clientPrice(client, job) {
-  if (job) return { value: job.value, currency: job.currency || 'USD' };
+  if (job) return { value: job.baseValue ?? job.value, currency: job.currency || 'USD' };
   return { value: client?.defaultValue ?? '', currency: client?.defaultCurrency || 'USD' };
+}
+export function localDateTime(value) {
+  const d = new Date(value);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+export const defaultDeadline = (now = Date.now()) =>
+  localDateTime(Math.ceil((now + 24 * 60 * 60 * 1000) / 60000) * 60000);
+export const dueTimestamp = (job) => new Date(job.dueAt || `${job.deadline}T23:59:59`).getTime();
+export function deadlineState(job, now = Date.now()) {
+  if (job.status === 'delivered') return { label: 'Entregue', tone: 'done' };
+  const minutes = Math.ceil((dueTimestamp(job) - now) / 60000);
+  if (minutes <= 0) return { label: 'Prazo vencido', tone: 'late' };
+  if (minutes < 60) return { label: `Faltam ${minutes} min`, tone: 'urgent' };
+  const hours = Math.floor(minutes / 60),
+    rest = minutes % 60;
+  if (minutes <= 24 * 60)
+    return { label: `Faltam ${hours}h${rest ? ` ${rest}min` : ''}`, tone: 'urgent' };
+  if (minutes < 48 * 60)
+    return { label: `Faltam ${hours}h${rest ? ` ${rest}min` : ''}`, tone: 'normal' };
+  return { label: `${Math.ceil(minutes / 1440)} dias restantes`, tone: 'normal' };
+}
+export function priceBreakdown(job) {
+  const base = job.baseValue ?? job.value ?? 0;
+  const extrasCents = (job.extras || []).reduce(
+    (sum, e) => sum + Math.round(e.unitValue * 100) * e.quantity,
+    0,
+  );
+  return { base, extras: extrasCents / 100, total: (Math.round(base * 100) + extrasCents) / 100 };
+}
+export function setJobStatus(job, status, now = Date.now()) {
+  if (!['briefing', 'production', 'review', 'delivered'].includes(status) || job.status === status)
+    return false;
+  job.status = status;
+  job.statusHistory = [
+    ...(job.statusHistory || []),
+    { status, at: new Date(now).toISOString() },
+  ].slice(-20);
+  if (status === 'delivered' && job.timerStartedAt) {
+    job.elapsedMs = elapsed(job, now);
+    job.timerStartedAt = null;
+  }
+  return true;
 }
 export function migrate(data) {
   return {
@@ -58,6 +101,9 @@ export function migrate(data) {
       timerStartedAt: j.timerStartedAt || null,
       links: j.links || [],
       files: j.files || [],
+      extras: j.extras || [],
+      priority: j.priority || 'normal',
+      statusHistory: j.statusHistory || [],
     })),
   };
 }
@@ -103,6 +149,42 @@ export function validate(data) {
         date(j.created) &&
         (!j.paid || date(j.paidAt)) &&
         typeof j.notes === 'string' &&
+        (j.dueAt === undefined ||
+          (typeof j.dueAt === 'string' &&
+            Number.isFinite(Date.parse(j.dueAt)) &&
+            /T/.test(j.dueAt))) &&
+        (j.priority === undefined || ['normal', 'high'].includes(j.priority)) &&
+        (j.baseValue === undefined ||
+          (Number.isFinite(j.baseValue) && j.baseValue >= 0 && j.baseValue <= 10000000)) &&
+        (j.extras === undefined ||
+          (Array.isArray(j.extras) &&
+            j.extras.length <= 30 &&
+            j.extras.every(
+              (e) =>
+                e &&
+                typeof e.id === 'string' &&
+                typeof e.name === 'string' &&
+                e.name.trim() &&
+                e.name.length <= 120 &&
+                Number.isInteger(e.quantity) &&
+                e.quantity >= 1 &&
+                e.quantity <= 100 &&
+                Number.isFinite(e.unitValue) &&
+                e.unitValue >= 0 &&
+                e.unitValue <= 10000000,
+            ))) &&
+        (j.baseValue === undefined || Math.abs(priceBreakdown(j).total - j.value) < 0.000001) &&
+        (!j.extras?.length || j.baseValue !== undefined) &&
+        (j.statusHistory === undefined ||
+          (Array.isArray(j.statusHistory) &&
+            j.statusHistory.length <= 20 &&
+            j.statusHistory.every(
+              (h) =>
+                h &&
+                ['briefing', 'production', 'review', 'delivered'].includes(h.status) &&
+                typeof h.at === 'string' &&
+                Number.isFinite(Date.parse(h.at)),
+            ))) &&
         (j.currency === undefined || ['USD', 'BRL'].includes(j.currency)) &&
         (j.elapsedMs === undefined || (Number.isFinite(j.elapsedMs) && j.elapsedMs >= 0)) &&
         (j.timerStartedAt == null || (Number.isFinite(j.timerStartedAt) && j.timerStartedAt > 0)) &&

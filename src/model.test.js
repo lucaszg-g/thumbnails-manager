@@ -1,6 +1,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { totals, validate, migrate, elapsed, toggleTimer, safeURL, clientPrice } from './model.js';
+import {
+  totals,
+  validate,
+  migrate,
+  elapsed,
+  toggleTimer,
+  safeURL,
+  clientPrice,
+  defaultDeadline,
+  dueTimestamp,
+  deadlineState,
+  priceBreakdown,
+  setJobStatus,
+} from './model.js';
 const fixture = () => ({
   rate: 5.2,
   clients: [{ id: '1', name: 'Canal', email: '', color: '#123456' }],
@@ -18,6 +31,54 @@ const fixture = () => ({
       notes: '',
     },
   ],
+});
+test('novo prazo tem pelo menos 24 horas reais e mantém compatibilidade com datas antigas', () => {
+  const now = Date.parse('2026-11-09T15:34:28Z');
+  const due = new Date(defaultDeadline(now)).getTime();
+  assert.ok(due - now >= 86400000);
+  assert.ok(due - now < 86460000);
+  const legacy = fixture().jobs[0];
+  assert.equal(dueTimestamp(legacy), new Date(legacy.deadline + 'T23:59:59').getTime());
+  const job = { ...legacy, status: 'production', dueAt: new Date(now + 3600000).toISOString() };
+  assert.equal(deadlineState(job, now).tone, 'urgent');
+  assert.equal(deadlineState(job, now + 3600001).tone, 'late');
+  assert.equal(deadlineState({ ...job, status: 'delivered' }, now + 3600001).tone, 'done');
+});
+test('adicionais compõem o total sem duplicar a base ao reabrir o trabalho', () => {
+  const job = {
+    ...fixture().jobs[0],
+    baseValue: 80,
+    extras: [{ id: 'e', name: 'Variação', quantity: 3, unitValue: 10.1 }],
+    value: 110.3,
+  };
+  assert.deepEqual(priceBreakdown(job), { base: 80, extras: 30.3, total: 110.3 });
+  assert.equal(clientPrice({}, job).value, 80);
+  assert.equal(validate({ ...fixture(), jobs: [job] }), true);
+  for (const alter of [
+    (j) => (j.value = 80),
+    (j) => (j.extras[0].quantity = 0),
+    (j) => (j.extras[0].quantity = 1.5),
+    (j) => (j.extras[0].unitValue = -1),
+    (j) => (j.extras[0].name = ''),
+    (j) => (j.dueAt = 'bad'),
+  ]) {
+    const invalid = structuredClone(job);
+    alter(invalid);
+    assert.equal(validate({ ...fixture(), jobs: [invalid] }), false);
+  }
+  assert.equal(totals([job]).pending, 110.3);
+});
+test('troca rápida de status registra histórico e pausa o cronômetro na entrega', () => {
+  const job = { ...fixture().jobs[0], status: 'production', elapsedMs: 2000, timerStartedAt: 1000 };
+  assert.equal(setJobStatus(job, 'delivered', 6000), true);
+  assert.equal(job.elapsedMs, 7000);
+  assert.equal(job.timerStartedAt, null);
+  assert.equal(job.statusHistory[0].status, 'delivered');
+  assert.equal(setJobStatus(job, 'delivered', 9000), false);
+  assert.equal(job.statusHistory.length, 1);
+  assert.equal(setJobStatus(job, 'unknown', 9000), false);
+  for (let i = 0; i < 30; i++) setJobStatus(job, i % 2 ? 'review' : 'production', 10000 + i);
+  assert.equal(job.statusHistory.length, 20);
 });
 test('preço padrão respeita moeda, aceita zero e preserva trabalhos já negociados', () => {
   const client = { defaultValue: 75, defaultCurrency: 'BRL' };

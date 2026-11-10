@@ -76,6 +76,18 @@ O comando `node scripts/verify-deployment.mjs https://thumbs-studio.thumbs-manag
 - Exportação CSV e backup JSON com importação validada.
 - Dados fictícios opcionais em Configurações para explorar um workspace vazio.
 
+## Fluxo de trabalho interativo
+
+- **Quadro de produção:** em Thumbnails, alterne entre quadro e lista. Arraste um cartão entre Briefing, Em produção, Em revisão e Entregue, ou use o seletor de status no cartão ou na lista. No celular, use o seletor.
+- **Prazos com hora:** novas thumbnails começam com pelo menos 24 horas a partir da criação do formulário. Há atalhos de 24h, 48h e 72h e edição livre de data/hora. O botão +24h adia o prazo atual. Trabalhos antigos que tinham só uma data continuam considerando o fim daquele dia.
+- **Adicionais:** inclua descrição, quantidade e valor unitário para revisões extras, variações, urgência ou itens personalizados. O resumo mostra preço base, adicionais e total; os indicadores financeiros e o CSV usam o total.
+- **Prioridades:** marque a bandeira no cartão para destacar trabalhos importantes. Filtre por prioridade, atrasos, próximas 24h, cliente ou pagamento pendente.
+- **Ações rápidas:** cronômetro, anexos, pagamento, cópia de briefing e duplicação ficam no cartão. Uma cópia reinicia o status, o prazo, o pagamento e o cronômetro e não herda anexos ou links.
+- **Histórico:** mudanças de status geram atividade recente no painel. Entregar uma thumbnail pausa seu cronômetro automaticamente. O histórico guarda as últimas 20 mudanças por trabalho.
+- **Atalhos:** `N` cria uma thumbnail e `/` foca a busca, fora dos formulários.
+
+Alterar o preço padrão de um cliente continua sem modificar preços de trabalhos existentes. Ao editar uma thumbnail com adicionais, o preço base e os itens são carregados separadamente para não somar os extras duas vezes.
+
 O backup JSON inclui os arquivos e o tempo acumulado; ao importá-lo, os cronômetros ficam pausados. A importação substitui os dados após confirmação e aceita backups antigos (trabalhos antigos continuam em USD). Apagar os dados do navegador remove apenas a cópia local; registros já sincronizados podem ser recuperados ao entrar no mesmo endereço com sua chave.
 
 A API Frankfurter fornece cotação de referência, não valores líquidos de tarifas nem cotações em tempo real. O app mantém o último valor salvo quando a consulta falha; antes da primeira consulta usa a estimativa inicial de R$ 5,20, indicada na interface. O gráfico consolida recebimentos em reais com a cotação atual, não com a cotação histórica. O CSV inclui moeda e tempo, mas não os arquivos: use o backup JSON para uma cópia completa.

@@ -1,4 +1,5 @@
 import * as ui from './ui.js';
+import * as workspace from './workspace.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -55,6 +56,7 @@ test('interface migra dados e apresenta valores separados; cotação conserva ca
   const context = vm.createContext({
     ...model,
     ...ui,
+    ...workspace,
     document,
     navigator: {},
     syncState: { status: 'saved', message: 'Salvo no banco' },

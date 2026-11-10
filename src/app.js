@@ -1,3 +1,12 @@
+import {
+  statusControl,
+  dueBadge,
+  renderHero,
+  viewSwitcher,
+  renderBoard,
+  renderActivity,
+} from './workspace.js';
+import { extrasSection, bindPriceEditor } from './price-editor.js';
 import { labels, statuses, icon, esc, money, date, initials, duration } from './ui.js';
 import { connect, queue, syncState, login, retry, reloadServer, api } from './sync.js';
 import { getFile, putFiles, removeFiles, toDataURL } from './storage.js';
@@ -10,6 +19,12 @@ import {
   toggleTimer,
   safeURL,
   clientPrice,
+  defaultDeadline,
+  localDateTime,
+  dueTimestamp,
+  deadlineState,
+  priceBreakdown,
+  setJobStatus,
 } from './model.js';
 // Workspace state and local recovery
 const KEY = 'thumbs-studio-v1';
@@ -30,6 +45,7 @@ let theme = localStorage.getItem('thumbs-theme') || 'dark';
 let rateBusy = false,
   rateError = false;
 let installPrompt = null;
+let jobView = localStorage.getItem('thumbs-work-view') || 'board';
 const locked = () => ['loading', 'locked', 'conflict'].includes(syncState.status);
 let page = 'dashboard',
   filter = 'all',
@@ -129,8 +145,11 @@ function render() {
         </div>
       </header>
       <div class="content">
-        ${corrupt ? '<div class="notice">O backup salvo não pôde ser lido. Ele foi preservado no navegador. Importe um backup válido em Configurações antes de cadastrar novos dados.</div>' : ''}${syncBanner()}
-        <div ${locked() ? 'inert' : ''}>${rateStrip()}${activeTimer()}${content()}</div>
+        ${corrupt ? '<div class="notice">O backup salvo não pôde ser lido. Ele foi preservado no navegador. Importe um backup válido em Configurações antes de cadastrar novos dados.</div>' : ''}
+        <div id="sync-status">${syncBanner()}</div>
+        <div id="studio-content" ${locked() ? 'inert' : ''}>
+          ${rateStrip()}${activeTimer()}${content()}
+        </div>
         <footer class="pagefooter">
           <span>Feito para quem transforma ideias em cliques.</span
           ><span>Thumbs Studio · Seu espaço criativo</span>
@@ -141,6 +160,7 @@ function render() {
   bind();
   bindExtras();
   bindCloud();
+  bindWorkspace();
   updateClocks();
 }
 // Page sections and views
@@ -246,7 +266,7 @@ function chart() {
 function dueList(full = false) {
   const list = data.jobs
     .filter((j) => j.status !== 'delivered')
-    .sort((a, b) => a.deadline.localeCompare(b.deadline));
+    .sort((a, b) => dueTimestamp(a) - dueTimestamp(b));
   return /* HTML */ `<section class="panel">
     <div class="panelhead">
       <div>
@@ -262,14 +282,17 @@ function dueList(full = false) {
           (j) =>
             /* HTML */ `<div class="deadlineitem">
               <div class="datebox">
-                <b>${j.deadline.slice(8)}</b>${date(j.deadline).split(' ').slice(1).join(' ')}
+                <b>${new Date(dueTimestamp(j)).getDate()}</b
+                >${date(j.deadline).split(' ').slice(1).join(' ')}
               </div>
               <div class="deadlinecopy">
                 <strong>${esc(j.title)}</strong><small>${esc(client(j.clientId).name)}</small>
               </div>
-              <span class="badge ${j.deadline < today() ? 'late' : j.status}"
-                >${j.deadline < today() ? 'Atrasada' : j.deadline === today() ? 'Hoje' : statuses[j.status]}</span
-              ><button class="iconbtn" data-edit="${esc(j.id)}" aria-label="Editar ${esc(j.title)}">
+              ${dueBadge(j)}<button
+                class="iconbtn"
+                data-edit="${esc(j.id)}"
+                aria-label="Editar ${esc(j.title)}"
+              >
                 ${icon('edit')}
               </button>
             </div>`,
@@ -279,14 +302,23 @@ function dueList(full = false) {
     }
   </section>`;
 }
-function table() {
-  let jobs = selectedJobs()
+function visibleJobs() {
+  return selectedJobs()
     .filter(
       (j) =>
-        (filter === 'all' || (filter === 'pending' && !j.paid) || filter === j.status) &&
+        (filter === 'all' ||
+          (filter === 'pending' && !j.paid) ||
+          (filter === 'late' && deadlineState(j).tone === 'late') ||
+          (filter === 'soon' && deadlineState(j).tone === 'urgent') ||
+          (filter === 'high' && j.priority === 'high') ||
+          filter === j.status) &&
         `${j.title} ${client(j.clientId).name}`.toLowerCase().includes(query.toLowerCase()),
     )
     .sort((a, b) => b.created.localeCompare(a.created));
+}
+
+function table() {
+  let jobs = visibleJobs();
   if (page === 'finance') jobs = jobs.sort((a, b) => Number(a.paid) - Number(b.paid));
   return /* HTML */ `<section class="panel">
     <div class="panelhead">
@@ -385,14 +417,12 @@ function table() {
                       ${avatar(client(j.clientId))}${esc(client(j.clientId).name)}
                     </div>
                   </td>
+                  <td>${dueBadge(j)}</td>
                   <td>
-                    <span
-                      style="${j.deadline < today() && j.status !== 'delivered' ? 'color:#b56e68' : ''}"
-                      >${date(j.deadline)}</span
-                    >
+                    <strong>${money(j.value, j.currency || 'USD')}</strong
+                    >${j.extras?.length ? `<small class="extra-table-note">${j.extras.length} adicionais</small>` : ''}
                   </td>
-                  <td><strong>${money(j.value, j.currency || 'USD')}</strong></td>
-                  <td><span class="badge ${j.status}">● ${statuses[j.status]}</span></td>
+                  <td>${statusControl(j)}</td>
                   <td>
                     <button
                       class="badge ${j.paid ? 'paid' : 'pending'}"
@@ -449,13 +479,21 @@ function table() {
 function content() {
   if (page === 'dashboard')
     return (
-      heading('Seu estúdio em um olhar', 'Acompanhe suas criações. Cuide dos seus resultados.') +
+      renderHero(data.jobs) +
+      heading('Seu estúdio, em números', 'Seu tempo e seu talento merecem resultados.', false) +
       stats() +
       /* HTML */ `<div class="middle">${chart()}${dueList()}</div>` +
-      table()
+      table() +
+      renderActivity(data.jobs, data.clients)
     );
   if (page === 'jobs')
-    return heading('Suas thumbnails', 'Do primeiro briefing ao último pagamento.') + table();
+    return (
+      heading('Seu fluxo criativo', 'Do briefing à entrega, um passo de cada vez.') +
+      viewSwitcher(jobView) +
+      (jobView === 'board'
+        ? renderBoard(visibleJobs(), data.clients, { filter, query, clientFilter })
+        : table())
+    );
   if (page === 'deadlines')
     return (
       heading('Cada entrega no seu tempo', 'Organize as prioridades e mantenha os prazos em dia.') +
@@ -656,11 +694,17 @@ function openForm(type, id) {
                   ><input
                     id="deadline"
                     name="deadline"
-                    type="date"
-                    value="${item?.deadline || today()}"
+                    type="datetime-local"
+                    value="${item ? localDateTime(dueTimestamp(item)) : defaultDeadline()}"
                     required
                   />
                 </div>
+              </div>
+              <div class="deadline-presets">
+                <span>Prazo inicial: 24 horas</span
+                ><button type="button" data-deadline-hours="24">24h</button
+                ><button type="button" data-deadline-hours="48">48h</button
+                ><button type="button" data-deadline-hours="72">72h</button>
               </div>
               <p id="client-price-note" class="subtitle" style="margin-bottom:12px">
                 ${
@@ -713,6 +757,18 @@ function openForm(type, id) {
                   />
                 </div>
               </div>
+              <div class="field">
+                <label for="priority">Prioridade</label
+                ><select id="priority" name="priority">
+                  <option value="normal" ${item?.priority !== 'high' ? 'selected' : ''}>
+                    Normal
+                  </option>
+                  <option value="high" ${item?.priority === 'high' ? 'selected' : ''}>
+                    ⚑ Alta prioridade
+                  </option>
+                </select>
+              </div>
+              ${extrasSection()}
               <div class="field">
                 <label for="notes">Observações / briefing</label
                 ><textarea id="notes" name="notes" rows="3" maxlength="5000">
@@ -798,6 +854,15 @@ ${esc(item?.notes || '')}</textarea>
       </div>
     </form>`;
   modal.querySelectorAll('[data-close]').forEach((b) => (b.onclick = () => modal.close()));
+  const priceEditor = type === 'job' ? bindPriceEditor(modal, item?.extras || []) : null;
+  modal.querySelectorAll('[data-deadline-hours]').forEach(
+    (button) =>
+      (button.onclick = () => {
+        modal.querySelector('#deadline').value = localDateTime(
+          Date.now() + Number(button.dataset.deadlineHours) * 3600000,
+        );
+      }),
+  );
   if (type === 'job') {
     const applyClientPrice = () => {
       const price = clientPrice(client(modal.querySelector('#clientId').value));
@@ -805,6 +870,7 @@ ${esc(item?.notes || '')}</textarea>
       modal.querySelector('#currency').value = price.currency;
       modal.querySelector('#value').readOnly = true;
       modal.querySelector('#currency').disabled = true;
+      priceEditor.refresh();
       modal.querySelector('#client-price-note').textContent =
         price.value === ''
           ? 'Defina o preço deste cliente em Clientes → Editar uma única vez.'
@@ -836,7 +902,17 @@ ${esc(item?.notes || '')}</textarea>
       value.timerStartedAt = item?.timerStartedAt || null;
       value.links = item?.links || [];
       value.files = item?.files || [];
-      value.value = Number(value.value);
+      value.baseValue = Number(value.value);
+      value.extras = priceEditor.getExtras();
+      value.value = priceBreakdown(value).total;
+      value.dueAt = new Date(value.deadline).toISOString();
+      value.deadline = value.deadline.slice(0, 10);
+      value.statusHistory = structuredClone(item?.statusHistory || []);
+      if (item && value.status !== item.status) {
+        const nextStatus = value.status;
+        value.status = item.status;
+        setJobStatus(value, nextStatus);
+      }
       value.paid = f.has('paid');
       if (value.paid && !value.paidAt) {
         toast('Informe a data do recebimento.');
@@ -854,7 +930,7 @@ ${esc(item?.notes || '')}</textarea>
     value.id = item?.id || crypto.randomUUID();
     const collection = type === 'job' ? data.jobs : data.clients;
     const previous = structuredClone(data);
-    if (item) collection[collection.indexOf(item)] = value;
+    if (item) collection[collection.findIndex((record) => record.id === item.id)] = value;
     else collection.push(value);
     if (!validate(data)) {
       data = previous;
@@ -922,6 +998,31 @@ function syncBanner() {
     >${state === 'offline' ? '<button id="retry-cloud">Tentar novamente</button>' : ''}
   </div>`;
 }
+// Sync notifications update only the banner, keeping search and open controls stable.
+function renderSyncStatus() {
+  const area = document.querySelector('#sync-status');
+  if (!area) {
+    render();
+    return;
+  }
+  area.innerHTML = syncBanner();
+  area
+    .querySelectorAll('[data-action]')
+    .forEach((button) => (button.onclick = () => action(button.dataset.action)));
+  document.querySelector('#studio-content')?.toggleAttribute('inert', locked());
+  const indicator = document.querySelector('.online');
+  if (indicator) {
+    indicator.title = syncState.message;
+    indicator.textContent =
+      '● ' +
+      (syncState.status === 'saved'
+        ? 'No banco'
+        : syncState.status === 'saving'
+          ? 'Salvando…'
+          : 'Local');
+  }
+  bindCloud();
+}
 function bindCloud() {
   const form = document.querySelector('#cloud-login');
   if (form)
@@ -988,9 +1089,155 @@ function activeTimer() {
     : '';
 }
 function updateClocks() {
+  document.querySelectorAll('[data-due]').forEach((element) => {
+    const job = data.jobs.find((j) => j.id === element.dataset.due);
+    if (job) {
+      const state = deadlineState(job);
+      element.textContent = '◷ ' + state.label;
+      element.dataset.tone = state.tone;
+    }
+  });
   document.querySelectorAll('[data-clock]').forEach((el) => {
     const job = data.jobs.find((j) => j.id === el.dataset.clock);
     if (job) el.textContent = duration(elapsed(job));
+  });
+}
+// Workspace shortcuts and quick actions share the same persistence path as forms.
+function updateJob(id, change, message) {
+  if (locked() || corrupt) return;
+  const job = data.jobs.find((j) => j.id === id);
+  if (!job) return;
+  const previous = structuredClone(job);
+  change(job);
+  if (!validate(data) || !persist()) {
+    Object.keys(job).forEach((key) => delete job[key]);
+    Object.assign(job, previous);
+    return;
+  }
+  render();
+  if (message) toast(message);
+}
+
+function changeStatus(id, status) {
+  if (!statuses[status] || data.jobs.find((job) => job.id === id)?.status === status) return;
+  updateJob(id, (job) => setJobStatus(job, status), `Movida para ${statuses[status]}.`);
+}
+
+function bindWorkspace() {
+  document.querySelectorAll('[data-status]').forEach((select) => {
+    select.onchange = () => changeStatus(select.dataset.status, select.value);
+  });
+  document.querySelectorAll('[data-view]').forEach((button) => {
+    button.onclick = () => {
+      jobView = button.dataset.view;
+      localStorage.setItem('thumbs-work-view', jobView);
+      render();
+    };
+  });
+  document.querySelectorAll('[data-focus]').forEach((button) => {
+    button.onclick = () => {
+      page = 'jobs';
+      filter = button.dataset.focus;
+      jobView = 'board';
+      query = '';
+      clientFilter = '';
+      month = 'all';
+      render();
+    };
+  });
+  document.querySelectorAll('[data-priority]').forEach((button) => {
+    button.onclick = () =>
+      updateJob(button.dataset.priority, (job) => {
+        job.priority = job.priority === 'high' ? 'normal' : 'high';
+      });
+  });
+  document.querySelectorAll('[data-postpone]').forEach((button) => {
+    button.onclick = () =>
+      updateJob(
+        button.dataset.postpone,
+        (job) => {
+          const due = dueTimestamp(job) + 86400000;
+          job.dueAt = new Date(due).toISOString();
+          job.deadline = localDateTime(due).slice(0, 10);
+        },
+        'Prazo adiado em 24 horas.',
+      );
+  });
+  document.querySelectorAll('[data-duplicate]').forEach((button) => {
+    button.onclick = () => {
+      if (locked() || corrupt) return;
+      const source = data.jobs.find((job) => job.id === button.dataset.duplicate);
+      const due = defaultDeadline();
+      const job = {
+        ...structuredClone(source),
+        id: crypto.randomUUID(),
+        title: (source.title + ' (cópia)').slice(0, 160),
+        created: today(),
+        deadline: due.slice(0, 10),
+        dueAt: new Date(due).toISOString(),
+        status: 'briefing',
+        paid: false,
+        paidAt: null,
+        elapsedMs: 0,
+        timerStartedAt: null,
+        statusHistory: [],
+        files: [],
+        links: [],
+      };
+      data.jobs.push(job);
+      if (!persist()) {
+        data.jobs.pop();
+        return;
+      }
+      render();
+      toast('Cópia criada com prazo de 24 horas, sem anexos ou pagamentos antigos.');
+    };
+  });
+  document.querySelectorAll('[data-copy-brief]').forEach((button) => {
+    button.onclick = async () => {
+      const job = data.jobs.find((j) => j.id === button.dataset.copyBrief);
+      try {
+        await navigator.clipboard.writeText(
+          `${job.title}\nCliente: ${client(job.clientId).name}\nPrazo: ${new Date(dueTimestamp(job)).toLocaleString('pt-BR')}\n\n${job.notes || 'Sem observações.'}`,
+        );
+        toast('Briefing copiado.');
+      } catch {
+        toast('Não foi possível copiar. Abra o trabalho para selecionar o briefing.');
+      }
+    };
+  });
+  document.querySelectorAll('[data-drag-job]').forEach((card) => {
+    card.ondragstart = (event) => {
+      if (locked() || event.target.closest('button, select, input, a')) {
+        event.preventDefault();
+        return;
+      }
+      event.dataTransfer.setData('text/plain', card.dataset.dragJob);
+      event.dataTransfer.effectAllowed = 'move';
+      card.classList.add('dragging');
+    };
+    card.ondragend = () =>
+      document
+        .querySelectorAll('.dragging, .drop-ready')
+        .forEach((el) => el.classList.remove('dragging', 'drop-ready'));
+  });
+  document.querySelectorAll('[data-drop-status]').forEach((column) => {
+    column.ondragover = (event) => {
+      if (!locked()) {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        column.classList.add('drop-ready');
+      }
+    };
+    column.ondragleave = (event) => {
+      if (!column.contains(event.relatedTarget)) column.classList.remove('drop-ready');
+    };
+    column.ondrop = (event) => {
+      event.preventDefault();
+      column.classList.remove('drop-ready');
+      const id = event.dataTransfer.getData('text/plain');
+      if (data.jobs.some((j) => j.id === id)) changeStatus(id, column.dataset.dropStatus);
+    };
   });
 }
 async function refreshRate(manual = false) {
@@ -1451,7 +1698,10 @@ function action(name) {
       [
         'Trabalho',
         'Cliente',
-        'Valor',
+        'Valor total',
+        'Preço base',
+        'Valor dos adicionais',
+        'Adicionais',
         'Moeda',
         'Tempo (horas)',
         'Etapa',
@@ -1464,10 +1714,13 @@ function action(name) {
         j.title,
         client(j.clientId).name,
         j.value,
+        priceBreakdown(j).base,
+        priceBreakdown(j).extras,
+        (j.extras || []).map((extra) => `${extra.name} ×${extra.quantity}`).join(' | '),
         j.currency || 'USD',
         (elapsed(j) / 3600000).toFixed(2),
         statuses[j.status],
-        j.deadline,
+        j.dueAt || j.deadline,
         j.paid ? 'Sim' : 'Não',
         j.paidAt || '',
         j.notes,
@@ -1535,7 +1788,7 @@ connect(
     corrupt = false;
     render();
   },
-  () => render(),
+  () => renderSyncStatus(),
 ).then(() => {
   if (syncState.status === 'saved') refreshRate();
 });
@@ -1543,6 +1796,28 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
 window.addEventListener('beforeinstallprompt', (event) => {
   event.preventDefault();
   installPrompt = event;
+});
+window.addEventListener('keydown', (event) => {
+  if (
+    event.ctrlKey ||
+    event.metaKey ||
+    event.altKey ||
+    event.target.closest?.('input, textarea, select, [contenteditable="true"]') ||
+    document.querySelector('#modal').open ||
+    locked()
+  )
+    return;
+  if (event.key.toLowerCase() === 'n') {
+    event.preventDefault();
+    openForm('job');
+  }
+  if (event.key === '/') {
+    const search = document.querySelector('#search');
+    if (search) {
+      event.preventDefault();
+      search.focus();
+    }
+  }
 });
 setInterval(updateClocks, 1000);
 setInterval(() => refreshRate(), 30 * 60 * 1000);

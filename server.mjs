@@ -5,7 +5,7 @@ import { Readable } from 'node:stream';
 import { openDatabase } from './backend/sqlite.js';
 import { handleAPI } from './backend/api.js';
 const root = process.cwd(),
-  database = openDatabase(path.join(root, 'data', 'thumbs.sqlite'));
+  database = openDatabase(process.env.THUMBS_DB_PATH || path.join(root, 'data', 'thumbs.sqlite'));
 const types = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -23,6 +23,9 @@ const publicFiles = new Set([
   '/icons/icon-512.png',
   '/src/app.js',
   '/src/ui.js',
+  '/src/workspace.js',
+  '/src/price-editor.js',
+  '/src/workspace.css',
   '/src/model.js',
   '/src/storage.js',
   '/src/sync.js',
