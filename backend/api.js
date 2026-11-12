@@ -1,4 +1,4 @@
-import { validate } from '../src/model.js';
+import { validate, fetchMarketQuote } from '../src/model.js';
 import { calendarCallback, handleCalendarAPI, syncCalendar } from './calendar.js';
 export const CHUNK_SIZE = 512 * 1024;
 const MAX_FILE = 20 * 1024 * 1024,
@@ -46,50 +46,17 @@ export async function handleAPI(request, env, ctx) {
     const calendarResponse = await handleCalendarAPI(request, env, ctx);
     if (calendarResponse) return calendarResponse;
     if (path === '/api/exchange-rate' && request.method === 'GET') {
-      let response;
       try {
-        response = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL', {
-          signal: AbortSignal.timeout(12000),
-        });
-      } catch {}
-      if (!response?.ok) {
-        const fallback = await fetch('https://api.frankfurter.dev/v2/rate/USD/BRL', {
-          signal: AbortSignal.timeout(12000),
-        });
-        if (!fallback.ok) return json({ error: 'Cotação indisponível.' }, 502);
-        const quote = await fallback.json();
-        if (
-          quote.base !== 'USD' ||
-          quote.quote !== 'BRL' ||
-          !Number.isFinite(quote.rate) ||
-          quote.rate <= 0 ||
-          !/^\d{4}-\d{2}-\d{2}$/.test(quote.date)
-        )
-          return json({ error: 'Cotação inválida.' }, 502);
-        return json({ ...quote, source: 'Frankfurter (referência diária)' });
+        return json(await fetchMarketQuote());
+      } catch {
+        return json(
+          {
+            error:
+              'Não foi possível consultar o dólar comercial. A última cotação salva foi mantida.',
+          },
+          502,
+        );
       }
-      const value = (await response.json()).USDBRL;
-      const rate = Number(value?.bid),
-        stamp = Number(value?.timestamp) * 1000;
-      if (
-        value?.code !== 'USD' ||
-        value?.codein !== 'BRL' ||
-        !Number.isFinite(rate) ||
-        rate <= 0 ||
-        !Number.isFinite(stamp) ||
-        stamp <= 0 ||
-        stamp > Date.now() + 300000
-      )
-        return json({ error: 'Cotação inválida.' }, 502);
-      const timestamp = new Date(stamp).toISOString();
-      return json({
-        base: 'USD',
-        quote: 'BRL',
-        rate,
-        date: timestamp.slice(0, 10),
-        timestamp,
-        source: 'AwesomeAPI',
-      });
     }
     const reference = path.match(/^\/api\/reference\/([a-zA-Z0-9_-]{11})$/);
     if (reference && request.method === 'GET') {

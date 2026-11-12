@@ -1,4 +1,4 @@
-const CACHE = 'thumbs-studio-v10';
+const CACHE = 'thumbs-studio-v11';
 const SHELL = [
   '/',
   '/index.html',

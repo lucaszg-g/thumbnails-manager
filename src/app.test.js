@@ -76,7 +76,14 @@ test('interface migra dados e apresenta valores separados; cotação conserva ca
     api: async () => context.fetch(),
     fetch: async () => ({
       ok: true,
-      json: async () => ({ date: '2026-11-09', base: 'USD', quote: 'BRL', rate: 5.5 }),
+      json: async () => ({
+        USDBRL: {
+          code: 'USD',
+          codein: 'BRL',
+          bid: '5.5',
+          timestamp: String(Math.floor(Date.now() / 1000)),
+        },
+      }),
     }),
   });
   vm.runInContext(
@@ -108,5 +115,5 @@ test('interface migra dados e apresenta valores separados; cotação conserva ca
   };
   await context.harness.refreshRate();
   assert.equal(context.harness.getData().rate, 5.5);
-  assert.match(app.innerHTML, /Sem conexão/);
+  assert.match(app.innerHTML, /última cotação salva/);
 });

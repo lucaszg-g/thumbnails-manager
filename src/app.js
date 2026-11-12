@@ -40,6 +40,7 @@ import {
   priceBreakdown,
   setJobStatus,
   workflowState,
+  fetchMarketQuote,
 } from './model.js';
 // Workspace state and local recovery
 const KEY = 'thumbs-studio-v1';
@@ -629,7 +630,7 @@ function content() {
         ${rateBusy ? 'Atualizando…' : 'Atualizar agora'}
       </button>
       <p>
-        A cotação de referência é buscada ao abrir o app e a cada 30 minutos enquanto ele estiver
+        A cotação de referência é buscada ao abrir o app e a cada 5 minutos enquanto ele estiver
         aberto. Em caso de falha, mantemos a última cotação salva. Você também pode informar uma
         cotação manual. Trabalhos em reais e dólares mantêm seus valores originais.
       </p>
@@ -1126,7 +1127,7 @@ function rateStrip() {
     <span
       ><i class="live-dot"></i> USD / BRL <strong>${money(data.rate, 'BRL')}</strong
       ><small
-        >${rateBusy ? 'Atualizando…' : rateError ? 'Sem conexão · última cotação salva' : data.rateSource === 'manual' ? 'Cotação manual' : data.rateDate ? `Compra · ${esc(data.rateSource || 'Referência')} · ${data.rateTimestamp ? new Date(data.rateTimestamp).toLocaleString('pt-BR') : date(data.rateDate)}` : 'Estimativa inicial · aguardando atualização'}</small
+        >${rateBusy ? 'Atualizando…' : rateError ? 'Não foi possível atualizar · última cotação salva' : data.rateSource === 'manual' ? 'Cotação manual' : data.rateDate ? `${data.rateSource?.startsWith('Frankfurter') ? 'Referência diária' : 'Comercial · compra'} · ${esc(data.rateSource || 'Referência')} · ${data.rateTimestamp ? new Date(data.rateTimestamp).toLocaleString('pt-BR') : date(data.rateDate)}` : 'Estimativa inicial · aguardando atualização'}</small
       ></span
     ><button
       data-action="refresh-rate"
@@ -1315,9 +1316,14 @@ async function refreshRate(manual = false) {
   rateBusy = true;
   render();
   try {
-    const response = await api('exchange-rate');
-    if (!response.ok) throw Error();
-    const quote = await response.json();
+    let quote;
+    try {
+      quote = await fetchMarketQuote(fetch);
+    } catch {
+      const response = await api('exchange-rate');
+      if (!response.ok) throw Error();
+      quote = await response.json();
+    }
     if (
       quote.base !== 'USD' ||
       quote.quote !== 'BRL' ||
@@ -1327,7 +1333,10 @@ async function refreshRate(manual = false) {
     )
       throw Error();
     const changed =
-      data.rate !== quote.rate || data.rateDate !== quote.date || data.rateSource !== quote.source;
+      data.rate !== quote.rate ||
+      data.rateDate !== quote.date ||
+      data.rateSource !== quote.source ||
+      data.rateTimestamp !== quote.timestamp;
     data.rate = quote.rate;
     data.rateDate = quote.date;
     data.rateSource = quote.source;
@@ -1900,7 +1909,7 @@ setInterval(() => {
     render();
   }
 }, 1000);
-setInterval(() => refreshRate(), 30 * 60 * 1000);
+setInterval(() => refreshRate(), 5 * 60 * 1000);
 window.addEventListener('online', () => {
   retry().catch(() => {});
   refreshRate();

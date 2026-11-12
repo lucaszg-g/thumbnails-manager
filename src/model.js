@@ -226,3 +226,46 @@ export function validate(data) {
     )
   );
 }
+
+// The trading timestamp belongs to the provider; never substitute request time.
+export function parseMarketQuote(value, now = Date.now()) {
+  const rate = Number(value?.bid),
+    stamp = Number(value?.timestamp) * 1000;
+  if (
+    value?.code !== 'USD' ||
+    value?.codein !== 'BRL' ||
+    !Number.isFinite(rate) ||
+    rate <= 0 ||
+    !Number.isFinite(stamp) ||
+    stamp <= 0 ||
+    stamp > now + 300000 ||
+    now - stamp > 96 * 60 * 60 * 1000
+  )
+    throw Error('Cotação comercial inválida ou antiga.');
+  const timestamp = new Date(stamp).toISOString();
+  return {
+    base: 'USD',
+    quote: 'BRL',
+    rate,
+    date: timestamp.slice(0, 10),
+    timestamp,
+    source: 'AwesomeAPI',
+    kind: 'bid',
+  };
+}
+export async function fetchMarketQuote(fetcher = fetch) {
+  for (const endpoint of [
+    'https://economia.awesomeapi.com.br/json/last/USD-BRL',
+    'https://economia.awesomeapi.com.br/last/USD-BRL',
+  ]) {
+    try {
+      const response = await fetcher(endpoint, {
+        signal: AbortSignal.timeout(8000),
+        cache: 'no-store',
+      });
+      if (!response.ok) continue;
+      return parseMarketQuote((await response.json()).USDBRL);
+    } catch {}
+  }
+  throw Error('Não foi possível consultar o dólar comercial.');
+}
