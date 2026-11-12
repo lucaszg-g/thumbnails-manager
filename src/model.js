@@ -96,6 +96,7 @@ export function setJobStatus(job, status, now = Date.now()) {
 export function migrate(data) {
   return {
     ...data,
+    notes: data.notes || [],
     clients: data.clients.map((c) => ({
       ...c,
       contact: c.contact || '',
@@ -120,6 +121,19 @@ export function validate(data) {
     !data ||
     !Array.isArray(data.clients) ||
     !Array.isArray(data.jobs) ||
+    (data.notes !== undefined &&
+      (!Array.isArray(data.notes) ||
+        data.notes.length > 2000 ||
+        data.notes.some(
+          (n) =>
+            !n ||
+            typeof n.id !== 'string' ||
+            typeof n.title !== 'string' ||
+            typeof n.body !== 'string' ||
+            n.title.length > 200 ||
+            n.body.length > 50000 ||
+            typeof n.clientId !== 'string',
+        ))) ||
     !Number.isFinite(data.rate) ||
     data.rate <= 0
   )

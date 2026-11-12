@@ -5,6 +5,8 @@ const labels = {
   clients: 'Clientes',
   finance: 'Financeiro',
   deadlines: 'Prazos',
+  tools: 'Ferramentas',
+  notes: 'Notas',
   settings: 'Configurações',
 };
 const statuses = {
@@ -14,6 +16,8 @@ const statuses = {
   delivered: 'Entregue',
 };
 const paths = {
+  tools: 'M4 4h16v16H4z M8 8h8 M12 8v8',
+  notes: 'M4 3h16v18H4z M8 8h8 M8 12h8 M8 16h4',
   dashboard: 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
   jobs: 'M3 4h18v16H3z M3 15l5-5 5 5 3-3 5 5 M15 8h.01',
   clients:

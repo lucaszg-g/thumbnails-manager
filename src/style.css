@@ -84,7 +84,7 @@ button:hover {
   font-size: 24px;
 }
 .navlabel {
-  font-size: 10px;
+  font-size: 13px;
   letter-spacing: 1.8px;
   margin: 47px 15px 14px;
   color: #6f8980;
@@ -112,7 +112,7 @@ button:hover {
 }
 .nav .count {
   margin-left: auto;
-  font-size: 10px;
+  font-size: 13px;
   background: #385242;
   padding: 2px 6px;
   border-radius: 4px;
@@ -124,7 +124,7 @@ button:hover {
   border: 1px solid #2c4037;
   border-radius: 8px;
   padding: 14px;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.7;
   margin-bottom: 23px;
 }
@@ -145,18 +145,18 @@ button:hover {
   flex-shrink: 0;
   width: 34px;
   height: 34px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   background: #e6efe8;
   color: #3a6551;
 }
 .profile strong {
-  font-size: 12px;
+  font-size: 13px;
   color: #e1e8e3;
   display: block;
 }
 .profile small {
-  font-size: 10px;
+  font-size: 13px;
 }
 .main {
   grid-column: 2;
@@ -170,7 +170,7 @@ button:hover {
   align-items: center;
   justify-content: space-between;
   padding: 0 40px;
-  font-size: 12px;
+  font-size: 13px;
 }
 .breadcrumb {
   color: #a0a6a3;
@@ -187,7 +187,7 @@ button:hover {
   color: #7d8981;
 }
 .online {
-  font-size: 10px;
+  font-size: 13px;
   background: #f0f6ef;
   color: #5c785b;
   padding: 6px 10px;
@@ -223,7 +223,7 @@ p {
   margin: 0;
 }
 .subtitle {
-  font-size: 12px;
+  font-size: 13px;
   color: #87918d;
 }
 .primary {
@@ -231,7 +231,7 @@ p {
   color: #fff;
   padding: 11px 16px;
   border-radius: 7px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -246,7 +246,7 @@ p {
   background: #fff;
   padding: 9px 12px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 13px;
 }
 .stats {
   display: grid;
@@ -268,7 +268,7 @@ p {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 13px;
   color: #738277;
 }
 .statlabel svg {
@@ -283,7 +283,7 @@ p {
   margin: 15px 0 7px;
 }
 .statfoot {
-  font-size: 10px;
+  font-size: 13px;
   color: #929b95;
 }
 .statfoot b {
@@ -310,12 +310,12 @@ p {
   gap: 12px;
 }
 .panelhead p {
-  font-size: 10px;
+  font-size: 13px;
   color: #8e9791;
   margin-top: 5px;
 }
 .panelhead select {
-  font-size: 10px;
+  font-size: 13px;
   border: 1px solid var(--line);
   padding: 6px;
   background: white;
@@ -339,7 +339,7 @@ p {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  font-size: 9px;
+  font-size: 13px;
   color: #a0aaa3;
 }
 .barwrap {
@@ -363,14 +363,14 @@ p {
 .barwrap span {
   position: absolute;
   bottom: -18px;
-  font-size: 9px;
+  font-size: 13px;
   color: #98a099;
 }
 .chartlegend {
   display: flex;
   justify-content: center;
   gap: 18px;
-  font-size: 9px;
+  font-size: 13px;
   color: #909b93;
   padding: 13px;
 }
@@ -396,7 +396,7 @@ p {
   border-radius: 6px;
   padding: 6px;
   text-align: center;
-  font-size: 9px;
+  font-size: 13px;
   color: #8c958d;
 }
 .datebox b {
@@ -409,23 +409,23 @@ p {
   min-width: 0;
 }
 .deadlinecopy strong {
-  font-size: 11px;
+  font-size: 13px;
   display: block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .deadlinecopy small {
-  font-size: 9px;
+  font-size: 13px;
   color: #9ba39c;
   display: block;
   margin-top: 5px;
 }
 .deadlineitem .badge {
-  font-size: 8px;
+  font-size: 13px;
 }
 .textbutton {
-  font-size: 11px;
+  font-size: 13px;
   color: #5d7964;
 }
 .tabletools {
@@ -441,7 +441,7 @@ p {
   flex-wrap: wrap;
 }
 .tabs button {
-  font-size: 10px;
+  font-size: 13px;
   padding: 7px 10px;
   color: #929c94;
   border-radius: 5px;
@@ -466,7 +466,7 @@ p {
 .search input {
   border: 0;
   outline: none;
-  font-size: 10px;
+  font-size: 13px;
   width: 150px;
   background: transparent;
 }
@@ -477,7 +477,7 @@ table {
   white-space: nowrap;
 }
 th {
-  font-size: 9px;
+  font-size: 13px;
   text-transform: uppercase;
   font-weight: 500;
   letter-spacing: 0.6px;
@@ -488,7 +488,7 @@ th {
   border-bottom: 1px solid #f0f2ef;
 }
 td {
-  font-size: 11px;
+  font-size: 13px;
   padding: 15px 20px;
   border-bottom: 1px solid #f1f3f0;
 }
@@ -521,13 +521,13 @@ td {
 }
 .workcell strong {
   display: block;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 550;
   max-width: 250px;
   white-space: normal;
 }
 .workcell small {
-  font-size: 9px;
+  font-size: 13px;
   color: #a0a79f;
   margin-top: 4px;
   display: block;
@@ -540,14 +540,14 @@ td {
 .clientcell .avatar {
   width: 24px;
   height: 24px;
-  font-size: 8px;
+  font-size: 13px;
 }
 .badge {
   display: inline-flex;
   gap: 5px;
   align-items: center;
   border-radius: 4px;
-  font-size: 9px;
+  font-size: 13px;
   padding: 5px 7px;
   background: #f2f4f1;
   color: #7e8d7e;
@@ -588,7 +588,7 @@ td {
 .tablefooter {
   padding: 15px 23px;
   color: #a3aba5;
-  font-size: 10px;
+  font-size: 13px;
   display: flex;
   justify-content: space-between;
 }
@@ -596,7 +596,7 @@ td {
   margin-top: 24px;
   display: flex;
   justify-content: space-between;
-  font-size: 9px;
+  font-size: 13px;
   color: #a3ada5;
 }
 .empty {
@@ -627,13 +627,13 @@ td {
   margin-bottom: 6px;
 }
 .clientcard p {
-  font-size: 11px;
+  font-size: 13px;
   color: #8a978e;
 }
 .clientmetrics {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 13px;
   border-top: 1px solid var(--line);
   padding-top: 17px;
   margin-top: 20px;
@@ -653,7 +653,7 @@ td {
   padding: 26px;
 }
 .settings p {
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.8;
   color: #809085;
   margin: 10px 0 20px;
@@ -668,7 +668,7 @@ td {
   padding: 12px 15px;
   border: 1px solid #e8e3d4;
   background: #fcfaf3;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.7;
   border-radius: 7px;
   color: #8e805b;
@@ -705,7 +705,7 @@ form {
   margin-bottom: 16px;
 }
 .field label {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
 }
 .field input,
@@ -715,7 +715,7 @@ form {
   border: 1px solid #dce4de;
   border-radius: 6px;
   padding: 10px;
-  font-size: 12px;
+  font-size: 13px;
   background: #fff;
   color: #324736;
 }
@@ -737,7 +737,7 @@ form {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 13px;
 }
 #toast {
   position: fixed;
@@ -748,7 +748,7 @@ form {
   color: white;
   padding: 12px 22px;
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 13px;
   z-index: 5;
   display: none;
 }
@@ -823,7 +823,7 @@ form {
   }
   .nav button {
     padding: 10px;
-    font-size: 11px;
+    font-size: 13px;
     white-space: nowrap;
     gap: 6px;
   }
@@ -853,7 +853,7 @@ form {
     font-size: 23px;
   }
   .subtitle {
-    font-size: 11px;
+    font-size: 13px;
     line-height: 1.6;
   }
   .stats {
@@ -890,7 +890,7 @@ form {
     grid-template-columns: 1fr;
   }
   .online {
-    font-size: 9px;
+    font-size: 13px;
   }
 }
 /* Studio 2: shared surfaces make both themes equally readable. */
@@ -1003,7 +1003,7 @@ h1 {
   letter-spacing: -1.2px;
 }
 .native-brl {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--accent);
   margin: -2px 0 12px;
 }
@@ -1025,7 +1025,7 @@ h1 {
   border-radius: 8px;
 }
 .theme-toggle {
-  font-size: 11px;
+  font-size: 13px;
   padding: 8px 12px;
   white-space: nowrap;
 }
@@ -1048,7 +1048,7 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--muted);
   padding: 12px 16px;
   background: var(--surface);
@@ -1063,14 +1063,14 @@ button:disabled {
 }
 .workspace-strip strong {
   color: var(--text);
-  font-size: 12px;
+  font-size: 13px;
 }
 .workspace-strip small {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
 }
 .workspace-strip button {
-  font-size: 10px;
+  font-size: 13px;
   color: var(--accent);
   white-space: nowrap;
 }
@@ -1098,7 +1098,7 @@ button:disabled {
 .eyebrow {
   display: block;
   color: var(--accent);
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 2px;
   margin-bottom: 7px;
 }
@@ -1111,7 +1111,7 @@ button:disabled {
 }
 .focus-banner small {
   display: block;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--muted);
   margin-top: 5px;
 }
@@ -1149,7 +1149,7 @@ tbody tr:hover {
   background: var(--surface-alt);
 }
 .workcell strong {
-  font-size: 12px;
+  font-size: 13px;
 }
 .workcell small,
 .tablefooter,
@@ -1170,7 +1170,7 @@ tbody tr:hover {
   justify-items: start;
 }
 .timerbutton {
-  font-size: 11px;
+  font-size: 13px;
   display: flex;
   gap: 7px;
   align-items: center;
@@ -1186,7 +1186,7 @@ tbody tr:hover {
   border-color: #347b5250;
 }
 .jobtools .textbutton {
-  font-size: 10px;
+  font-size: 13px;
 }
 .rowactions .iconbtn:hover {
   background: var(--accent-soft);
@@ -1286,7 +1286,7 @@ dialog::backdrop {
   color: var(--muted);
   display: block;
   margin-top: 4px;
-  font-size: 10px;
+  font-size: 13px;
 }
 .contactline {
   display: block;
@@ -1315,7 +1315,7 @@ dialog::backdrop {
   padding: 24px;
 }
 .section-label {
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 1.6px;
   color: var(--muted);
   margin-bottom: 14px;
@@ -1338,10 +1338,10 @@ dialog::backdrop {
   color: var(--accent);
 }
 .upload-area strong {
-  font-size: 12px;
+  font-size: 13px;
 }
 .upload-area small {
-  font-size: 10px;
+  font-size: 13px;
   color: var(--muted);
 }
 .upload-area input {
@@ -1360,7 +1360,7 @@ dialog::backdrop {
   align-items: center;
   padding: 14px 0;
   border-bottom: 1px solid var(--line);
-  font-size: 11px;
+  font-size: 13px;
 }
 .asset-row > div {
   flex: 1;
@@ -1372,7 +1372,7 @@ dialog::backdrop {
 }
 .asset-row small {
   display: block;
-  font-size: 10px;
+  font-size: 13px;
   color: var(--muted);
   margin-top: 5px;
 }
@@ -1390,7 +1390,7 @@ dialog::backdrop {
   min-width: 0;
 }
 .asset-note {
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.8;
   margin-top: 15px;
 }
@@ -1403,10 +1403,10 @@ dialog::backdrop {
   min-width: 0;
   flex: 1;
   padding: 10px;
-  font-size: 11px;
+  font-size: 13px;
 }
 .link-form .primary {
-  font-size: 11px;
+  font-size: 13px;
 }
 .notice {
   background: var(--accent-soft);
@@ -1460,7 +1460,7 @@ dialog::backdrop {
     flex-wrap: wrap;
   }
   .topbar .breadcrumb {
-    font-size: 10px;
+    font-size: 13px;
   }
   .topbar {
     padding: 0 16px;
@@ -1477,7 +1477,7 @@ dialog::backdrop {
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13px;
   padding: 12px 16px;
   margin-bottom: 15px;
   border-radius: 10px;
@@ -1492,7 +1492,7 @@ dialog::backdrop {
 }
 .sync-banner button {
   color: var(--accent);
-  font-size: 11px;
+  font-size: 13px;
   white-space: nowrap;
 }
 .sync-banner > div {
@@ -1512,7 +1512,7 @@ dialog::backdrop {
   margin: 12px 0;
 }
 .cloud-login p {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
   line-height: 1.8;
 }
@@ -1520,7 +1520,7 @@ dialog::backdrop {
   padding: 24px 0;
 }
 .cloud-login label {
-  font-size: 12px;
+  font-size: 13px;
   display: block;
   margin-bottom: 10px;
 }
@@ -1537,10 +1537,10 @@ dialog::backdrop {
   padding: 12px;
   color: var(--text);
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
 }
 .cloud-login small {
-  font-size: 10px;
+  font-size: 13px;
   color: var(--muted);
   line-height: 1.8;
 }
@@ -1569,7 +1569,7 @@ dialog::backdrop {
     justify-content: space-between;
   }
   .nav button {
-    font-size: 10px;
+    font-size: 13px;
     flex-direction: column;
     gap: 5px;
     padding: 7px 9px;
@@ -1588,7 +1588,7 @@ dialog::backdrop {
     gap: 10px;
   }
   .heading .primary {
-    font-size: 10px;
+    font-size: 13px;
     padding: 10px;
   }
   .heading h1 {
@@ -1604,10 +1604,10 @@ dialog::backdrop {
     padding: 14px;
   }
   .statlabel {
-    font-size: 10px;
+    font-size: 13px;
   }
   .statfoot {
-    font-size: 9px;
+    font-size: 13px;
     line-height: 1.6;
   }
   .panelhead {
@@ -1617,7 +1617,7 @@ dialog::backdrop {
     font-size: 14px;
   }
   .panelhead .textbutton {
-    font-size: 10px;
+    font-size: 13px;
   }
   .clientcard {
     padding: 19px;
@@ -1627,12 +1627,12 @@ dialog::backdrop {
     margin: 24px auto;
   }
   .sync-banner {
-    font-size: 10px;
+    font-size: 13px;
     padding: 10px 12px;
     flex-wrap: wrap;
   }
   .sync-banner button {
-    font-size: 10px;
+    font-size: 13px;
   }
   .tablewrap table {
     white-space: normal;
@@ -1660,7 +1660,7 @@ dialog::backdrop {
     padding: 0;
     border: 0;
     min-width: 0;
-    font-size: 11px;
+    font-size: 13px;
   }
   .tablewrap td:first-child {
     grid-column: 1/-1;
@@ -1705,7 +1705,7 @@ dialog::backdrop {
     max-width: none;
   }
   .tablefooter {
-    font-size: 9px;
+    font-size: 13px;
     gap: 12px;
     flex-wrap: wrap;
   }

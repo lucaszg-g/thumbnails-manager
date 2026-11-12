@@ -22,6 +22,7 @@ const publicFiles = new Set([
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/src/app.js',
+  '/src/tools.js',
   '/src/ui.js',
   '/src/workspace.js',
   '/src/calendar-settings.js',

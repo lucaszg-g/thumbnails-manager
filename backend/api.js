@@ -45,6 +45,55 @@ export async function handleAPI(request, env, ctx) {
   try {
     const calendarResponse = await handleCalendarAPI(request, env, ctx);
     if (calendarResponse) return calendarResponse;
+    if (path === '/api/exchange-rate' && request.method === 'GET') {
+      const response = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL', {
+        signal: AbortSignal.timeout(12000),
+      });
+      if (!response.ok) return json({ error: 'Cotação indisponível.' }, 502);
+      const value = (await response.json()).USDBRL;
+      const rate = Number(value?.bid),
+        stamp = Number(value?.timestamp) * 1000;
+      if (
+        value?.code !== 'USD' ||
+        value?.codein !== 'BRL' ||
+        !Number.isFinite(rate) ||
+        rate <= 0 ||
+        !Number.isFinite(stamp) ||
+        stamp <= 0 ||
+        stamp > Date.now() + 300000
+      )
+        return json({ error: 'Cotação inválida.' }, 502);
+      const timestamp = new Date(stamp).toISOString();
+      return json({
+        base: 'USD',
+        quote: 'BRL',
+        rate,
+        date: timestamp.slice(0, 10),
+        timestamp,
+        source: 'AwesomeAPI',
+      });
+    }
+    const reference = path.match(/^\/api\/reference\/([a-zA-Z0-9_-]{11})$/);
+    if (reference && request.method === 'GET') {
+      for (const quality of ['maxresdefault', 'sddefault', 'hqdefault']) {
+        const response = await fetch(`https://i.ytimg.com/vi/${reference[1]}/${quality}.jpg`, {
+          redirect: 'error',
+          signal: AbortSignal.timeout(12000),
+        });
+        if (!response.ok || !response.headers.get('Content-Type')?.startsWith('image/')) continue;
+        const bytes = await response.arrayBuffer();
+        if (bytes.byteLength > 5 * 1024 * 1024) return json({ error: 'Imagem muito grande.' }, 413);
+        return new Response(bytes, {
+          headers: {
+            'Content-Type': 'image/jpeg',
+            'Content-Disposition': `attachment; filename="referencia-${reference[1]}.jpg"`,
+            'Cache-Control': 'private, max-age=3600',
+            'X-Content-Type-Options': 'nosniff',
+          },
+        });
+      }
+      return json({ error: 'Thumbnail não encontrada.' }, 404);
+    }
     const db = env.DB;
     if (path === '/api/state' && request.method === 'GET') {
       const row = await db

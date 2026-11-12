@@ -1,3 +1,14 @@
+import {
+  renderTools,
+  bindTools,
+  renderNotes,
+  bindNotes,
+  renderDeadlineCalendar,
+  bindDeadlineCalendar,
+  monthPicker,
+  monthlyJobs,
+  financialBreakdown,
+} from './tools.js';
 import { renderCalendarSettings, bindCalendarSettings } from './calendar-settings.js';
 import { checkDeadlineNotifications } from './notifications.js';
 import {
@@ -55,7 +66,7 @@ let page = 'dashboard',
   filter = 'all',
   query = '',
   clientFilter = '',
-  month = 'all';
+  month = today().slice(0, 7);
 const client = (id) => data.clients.find((c) => c.id === id);
 // Shared workspace components
 function avatar(c) {
@@ -86,7 +97,7 @@ function navigate(next) {
   filter = 'all';
   query = '';
   clientFilter = '';
-  month = 'all';
+  month = today().slice(0, 7);
   render();
 }
 function selectedJobs() {
@@ -116,7 +127,7 @@ function render() {
                 class="${page === key ? 'active' : ''}"
                 ${page === key ? 'aria-current="page"' : ''}
               >
-                ${icon(key)}${label}${key === 'jobs' && data.jobs.length ? /* HTML */ `<span class="count">${data.jobs.length}</span>` : ''}${key === 'finance' && pending ? /* HTML */ `<span class="count">${pending}</span>` : ''}
+                ${icon(key)}${label}${key === 'jobs' && data.jobs.length ? /* HTML */ `<span class="count">${monthlyJobs(data.jobs).length}</span>` : ''}${key === 'finance' && pending ? /* HTML */ `<span class="count">${pending}</span>` : ''}
               </button>`,
           )
           .join('')}
@@ -162,6 +173,18 @@ function render() {
     </main>
   </div>`;
   bind();
+  if (!locked()) {
+    bindTools(api, toast);
+    bindNotes(data, persist, render, toast);
+    bindDeadlineCalendar(render);
+  }
+  document.querySelectorAll('[data-month]').forEach(
+    (el) =>
+      (el.onchange = () => {
+        month = el.value;
+        render();
+      }),
+  );
   bindExtras();
   bindCloud();
   bindWorkspace();
@@ -187,7 +210,7 @@ function heading(title, subtitle, action = true) {
     }
   </div>`;
 }
-function stats(jobs = data.jobs) {
+function stats(jobs = monthlyJobs(data.jobs)) {
   const t = totals(jobs),
     brl = totals(jobs, 'BRL');
   return /* HTML */ `<div class="stats">
@@ -372,7 +395,9 @@ function table() {
             ><label class="field" style="margin:0"
               ><select id="month-filter" aria-label="Filtrar por mês de criação">
                 <option value="all">Todos os meses</option>
-                ${[...new Set(data.jobs.map((j) => j.created.slice(0, 7)))]
+                ${[
+                  ...new Set([today().slice(0, 7), ...data.jobs.map((j) => j.created.slice(0, 7))]),
+                ]
                   .sort()
                   .reverse()
                   .map(
@@ -483,10 +508,31 @@ function table() {
   </section>`;
 }
 function content() {
+  if (page === 'tools')
+    return (
+      heading(
+        'Ferramentas criativas',
+        'Texto e refer?ncias para suas próximas thumbnails.',
+        false,
+      ) + renderTools()
+    );
+  if (page === 'notes')
+    return (
+      heading(
+        'Seu caderno de ideias',
+        'Notas de clientes, prompts e ideias em um só lugar.',
+        false,
+      ) + renderNotes(data)
+    );
+
   if (page === 'dashboard')
     return (
-      renderHero(data.jobs) +
-      heading('Seu estúdio, em números', 'Seu tempo e seu talento merecem resultados.', false) +
+      renderHero(monthlyJobs(data.jobs)) +
+      heading(
+        'Seu estúdio, em números',
+        'Indicadores do mês atual. Seu histórico fica preservado em Thumbnails.',
+        false,
+      ) +
       stats() +
       /* HTML */ `<div class="middle">${chart()}${dueList()}</div>` +
       table() +
@@ -496,6 +542,7 @@ function content() {
     return (
       heading('Seu fluxo criativo', 'Do briefing à entrega, um passo de cada vez.') +
       renderPaymentSummary(selectedJobs()) +
+      monthPicker(data.jobs, month) +
       viewSwitcher(jobView) +
       (jobView === 'board'
         ? renderBoard(visibleJobs(), data.clients, { filter, query, clientFilter })
@@ -504,6 +551,7 @@ function content() {
   if (page === 'deadlines')
     return (
       heading('Cada entrega no seu tempo', 'Organize as prioridades e mantenha os prazos em dia.') +
+      renderDeadlineCalendar(data.jobs, data.clients) +
       dueList(true)
     );
   if (page === 'finance')
@@ -512,7 +560,10 @@ function content() {
         'Seu trabalho tem valor',
         'Acompanhe recebimentos e saiba exatamente o que falta receber.',
       ) +
+      monthPicker(data.jobs, month) +
       stats(selectedJobs()) +
+      chart() +
+      financialBreakdown(selectedJobs(), data.rate) +
       table()
     );
   if (page === 'clients')
@@ -566,8 +617,11 @@ function content() {
     /* HTML */ `<section class="panel settings">
       <h2>Conversão automática USD → BRL</h2>
       <p>
-        <a href="https://frankfurter.dev" target="_blank" rel="noopener noreferrer"
-          >Fonte: Frankfurter</a
+        <a
+          href="https://docs.awesomeapi.com.br/api-de-moedas"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Fonte: AwesomeAPI · dólar comercial de compra (bid)</a
         >
         · Cotação de referência, sem tarifas de recebimento.
       </p>
@@ -1072,7 +1126,7 @@ function rateStrip() {
     <span
       ><i class="live-dot"></i> USD / BRL <strong>${money(data.rate, 'BRL')}</strong
       ><small
-        >${rateBusy ? 'Atualizando…' : rateError ? 'Sem conexão · última cotação salva' : data.rateSource === 'manual' ? 'Cotação manual' : data.rateDate ? `Referência: ${date(data.rateDate)}` : 'Estimativa inicial · aguardando atualização'}</small
+        >${rateBusy ? 'Atualizando…' : rateError ? 'Sem conexão · última cotação salva' : data.rateSource === 'manual' ? 'Cotação manual' : data.rateDate ? `Compra · ${esc(data.rateSource || 'Referência')} · ${data.rateTimestamp ? new Date(data.rateTimestamp).toLocaleString('pt-BR') : date(data.rateDate)}` : 'Estimativa inicial · aguardando atualização'}</small
       ></span
     ><button
       data-action="refresh-rate"
@@ -1157,7 +1211,7 @@ function bindWorkspace() {
       jobView = 'board';
       query = '';
       clientFilter = '';
-      month = 'all';
+      month = today().slice(0, 7);
       render();
     };
   });
@@ -1261,9 +1315,7 @@ async function refreshRate(manual = false) {
   rateBusy = true;
   render();
   try {
-    const response = await fetch('https://api.frankfurter.dev/v2/rate/USD/BRL', {
-      signal: AbortSignal.timeout(12000),
-    });
+    const response = await api('exchange-rate');
     if (!response.ok) throw Error();
     const quote = await response.json();
     if (
@@ -1275,10 +1327,11 @@ async function refreshRate(manual = false) {
     )
       throw Error();
     const changed =
-      data.rate !== quote.rate || data.rateDate !== quote.date || data.rateSource !== 'Frankfurter';
+      data.rate !== quote.rate || data.rateDate !== quote.date || data.rateSource !== quote.source;
     data.rate = quote.rate;
     data.rateDate = quote.date;
-    data.rateSource = 'Frankfurter';
+    data.rateSource = quote.source;
+    data.rateTimestamp = quote.timestamp;
     if (changed) {
       data.rateUpdatedAt = new Date().toISOString();
       persist();
@@ -1837,7 +1890,16 @@ window.addEventListener('keydown', (event) => {
     }
   }
 });
-setInterval(updateClocks, 1000);
+let displayedMonth = today().slice(0, 7);
+setInterval(() => {
+  updateClocks();
+  const current = today().slice(0, 7);
+  if (current !== displayedMonth) {
+    displayedMonth = current;
+    month = current;
+    render();
+  }
+}, 1000);
 setInterval(() => refreshRate(), 30 * 60 * 1000);
 window.addEventListener('online', () => {
   retry().catch(() => {});

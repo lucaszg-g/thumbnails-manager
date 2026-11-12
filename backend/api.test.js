@@ -135,3 +135,40 @@ test('limite de armazenamento é aplicado no banco antes do upload', async () =>
     db.close();
   }
 });
+
+test('cotação valida o par e imagem usa servidor fixo com alternativa de resolução', async (t) => {
+  const env = { ACCESS_KEY: key };
+  const original = globalThis.fetch;
+  t.after(() => {
+    globalThis.fetch = original;
+  });
+  globalThis.fetch = async () =>
+    Response.json({
+      USDBRL: {
+        code: 'USD',
+        codein: 'BRL',
+        bid: '5.73',
+        timestamp: String(Math.floor(Date.now() / 1000)),
+      },
+    });
+  let response = await handleAPI(request('exchange-rate'), env);
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).rate, 5.73);
+  globalThis.fetch = async () =>
+    Response.json({ USDBRL: { code: 'BRL', codein: 'USD', bid: '0.2' } });
+  assert.equal((await handleAPI(request('exchange-rate'), env)).status, 502);
+  const calls = [];
+  globalThis.fetch = async (url) => {
+    calls.push(url);
+    return calls.length === 1
+      ? new Response('', { status: 404 })
+      : new Response(new Uint8Array([255, 216, 255]), {
+          headers: { 'Content-Type': 'image/jpeg' },
+        });
+  };
+  response = await handleAPI(request('reference/dQw4w9WgXcQ'), env);
+  assert.equal(response.status, 200);
+  assert.equal(calls.length, 2);
+  assert.ok(calls.every((u) => u.startsWith('https://i.ytimg.com/vi/dQw4w9WgXcQ/')));
+  assert.match(response.headers.get('Content-Disposition'), /attachment/);
+});

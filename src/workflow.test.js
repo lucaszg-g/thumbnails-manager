@@ -48,12 +48,19 @@ test('formulário aplica preço do cliente, soma adicionais e permite atualizar 
     queue() {},
     connect: async () => {},
     syncState: { status: 'saved', message: 'Salvo' },
+    api: async () => context.fetch(),
     fetch: async () => ({
       ok: true,
       json: async () => ({ base: 'USD', quote: 'BRL', rate: 5.5, date: '2026-11-09' }),
     }),
   });
   context.setInterval = () => 0;
+  vm.runInContext(
+    (await readFile(new URL('./tools.js', import.meta.url), 'utf8'))
+      .replace(/^import[\s\S]*?;\r?\n/gm, '')
+      .replace(/^export /gm, ''),
+    context,
+  );
   const source = (await readFile(new URL('./app.js', import.meta.url), 'utf8')).replace(
     /^import[\s\S]*?;\r?\n/gm,
     '',
@@ -70,6 +77,32 @@ test('formulário aplica preço do cliente, soma adicionais e permite atualizar 
       q('#edit-form').dispatchEvent(
         new window.Event('submit', { cancelable: true, bubbles: true }),
       );
+    context.harness.navigate('tools');
+    assert.ok(q('[data-page="notes"]'));
+    input('#case-input', 'OLÁ MUNDO');
+    q('#case-mode').value = 'first';
+    q('#case-mode').dispatchEvent(new window.Event('change'));
+    assert.equal(q('#case-output').value, 'Olá mundo');
+    q('[data-case-preset="upper"]').click();
+    assert.equal(q('#case-output').value, 'OLÁ MUNDO');
+    q('#reuse-case').click();
+    assert.equal(q('#case-input').value, 'OLÁ MUNDO');
+    q('[data-tool="reference"]').click();
+    assert.equal(q('[data-tool-panel="text"]').hidden, true);
+    assert.equal(q('[data-tool-panel="reference"]').hidden, false);
+    q('[data-tool="text"]').click();
+    assert.equal(q('[data-tool-panel="text"]').hidden, false);
+    context.harness.navigate('notes');
+    input('#note-form [name="title"]', 'Prompt teste');
+    input('#note-form [name="body"]', 'Ideia para cliente');
+    q('#note-form').dispatchEvent(new window.Event('submit', { cancelable: true, bubbles: true }));
+    assert.equal(context.harness.getData().notes.length, 1);
+    assert.match(q('#note-list').textContent, /Prompt teste/);
+    context.harness.navigate('deadlines');
+    assert.ok(q('.deadline-calendar'));
+    q('[data-calendar="1"]').click();
+    assert.ok(q('.deadline-calendar'));
+    context.harness.navigate('dashboard');
     const start = Date.now();
     context.harness.openForm('job');
     assert.equal(q('#value').value, '100');

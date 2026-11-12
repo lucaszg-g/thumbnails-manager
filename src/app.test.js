@@ -26,7 +26,7 @@ test('interface migra dados e apresenta valores separados; cotação conserva ca
         value: 100,
         paid: true,
         paidAt: '2026-11-09',
-        created: '2026-11-01',
+        created: model.today().slice(0, 7) + '-01',
         deadline: '2026-11-10',
         status: 'delivered',
         notes: '',
@@ -38,7 +38,7 @@ test('interface migra dados e apresenta valores separados; cotação conserva ca
         clientId: 'c',
         value: 200,
         paid: false,
-        created: '2026-11-01',
+        created: model.today().slice(0, 7) + '-01',
         deadline: '2026-11-10',
         status: 'production',
         notes: '',
@@ -73,11 +73,18 @@ test('interface migra dados e apresenta valores separados; cotação conserva ca
     setInterval() {},
     window: { addEventListener() {} },
     localStorage: { getItem: (k) => store.get(k) || null, setItem: (k, v) => store.set(k, v) },
+    api: async () => context.fetch(),
     fetch: async () => ({
       ok: true,
       json: async () => ({ date: '2026-11-09', base: 'USD', quote: 'BRL', rate: 5.5 }),
     }),
   });
+  vm.runInContext(
+    (await readFile(new URL('./tools.js', import.meta.url), 'utf8'))
+      .replace(/^import[\s\S]*?;\r?\n/gm, '')
+      .replace(/^export /gm, ''),
+    context,
+  );
   const source = (await readFile(new URL('./app.js', import.meta.url), 'utf8')).replace(
     /^import[\s\S]*?;\r?\n/gm,
     '',
