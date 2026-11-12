@@ -46,10 +46,28 @@ export async function handleAPI(request, env, ctx) {
     const calendarResponse = await handleCalendarAPI(request, env, ctx);
     if (calendarResponse) return calendarResponse;
     if (path === '/api/exchange-rate' && request.method === 'GET') {
-      const response = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL', {
-        signal: AbortSignal.timeout(12000),
-      });
-      if (!response.ok) return json({ error: 'Cotação indisponível.' }, 502);
+      let response;
+      try {
+        response = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL', {
+          signal: AbortSignal.timeout(12000),
+        });
+      } catch {}
+      if (!response?.ok) {
+        const fallback = await fetch('https://api.frankfurter.dev/v2/rate/USD/BRL', {
+          signal: AbortSignal.timeout(12000),
+        });
+        if (!fallback.ok) return json({ error: 'Cotação indisponível.' }, 502);
+        const quote = await fallback.json();
+        if (
+          quote.base !== 'USD' ||
+          quote.quote !== 'BRL' ||
+          !Number.isFinite(quote.rate) ||
+          quote.rate <= 0 ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(quote.date)
+        )
+          return json({ error: 'Cotação inválida.' }, 502);
+        return json({ ...quote, source: 'Frankfurter (referência diária)' });
+      }
       const value = (await response.json()).USDBRL;
       const rate = Number(value?.bid),
         stamp = Number(value?.timestamp) * 1000;
@@ -77,7 +95,7 @@ export async function handleAPI(request, env, ctx) {
     if (reference && request.method === 'GET') {
       for (const quality of ['maxresdefault', 'sddefault', 'hqdefault']) {
         const response = await fetch(`https://i.ytimg.com/vi/${reference[1]}/${quality}.jpg`, {
-          redirect: 'error',
+          redirect: 'follow',
           signal: AbortSignal.timeout(12000),
         });
         if (!response.ok || !response.headers.get('Content-Type')?.startsWith('image/')) continue;
