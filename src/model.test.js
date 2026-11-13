@@ -188,3 +188,28 @@ test('backup exige referências válidas, valores finitos e data de pagamento', 
   d.jobs[0].paidAt = '2026-11-09';
   assert.equal(validate(d), true);
 });
+
+test('stage timers resume independently across status changes and backup', async () => {
+  const { stageElapsed, pauseTimer } = await import('./model.js');
+  const job = { id: 'stages', status: 'briefing', elapsedMs: 0 };
+  setJobStatus(job, 'production', 1000);
+  assert.equal(stageElapsed(job, 'production', 4000), 3000);
+  setJobStatus(job, 'review', 4000);
+  assert.equal(stageElapsed(job, 'production', 6000), 3000);
+  assert.equal(stageElapsed(job, 'review', 6000), 2000);
+  setJobStatus(job, 'production', 6000);
+  assert.equal(stageElapsed(job, 'production', 9000), 6000);
+  assert.equal(stageElapsed(job, 'review', 9000), 2000);
+  toggleTimer([job], job.id, 9000);
+  assert.equal(stageElapsed(job, 'production', 12000), 6000);
+  toggleTimer([job], job.id, 12000);
+  setJobStatus(job, 'review', 14000);
+  const backup = structuredClone(job);
+  pauseTimer(backup, 16000);
+  assert.equal(stageElapsed(backup, 'production', 20000), 8000);
+  assert.equal(stageElapsed(backup, 'review', 20000), 4000);
+  setJobStatus(job, 'delivered', 17000);
+  assert.equal(stageElapsed(job, 'review', 25000), 5000);
+  assert.equal(elapsed(job, 25000), 13000);
+  assert.equal(job.timerStartedAt, null);
+});

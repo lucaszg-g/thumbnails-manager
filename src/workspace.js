@@ -3,6 +3,7 @@ import {
   deadlineState,
   dueTimestamp,
   elapsed,
+  stageElapsed,
   priceBreakdown,
   totals,
   workflowState,
@@ -197,14 +198,7 @@ export function renderBoard(jobs, clients, options) {
                       </div>
                       ${statusControl(job)}
                       <div class="card-bottom">
-                        <button
-                          class="timerbutton ${job.timerStartedAt ? 'running' : ''}"
-                          data-timer="${esc(job.id)}"
-                          aria-label="${job.timerStartedAt ? 'Pausar' : 'Iniciar'} cronômetro de ${esc(job.title)}"
-                        >
-                          ${job.timerStartedAt ? 'Ⅱ' : '▷'}
-                          <span data-clock="${esc(job.id)}">${duration(elapsed(job))}</span></button
-                        ><button class="textbutton" data-assets="${esc(job.id)}">
+                        ${renderTimers(job)}<button class="textbutton" data-assets="${esc(job.id)}">
                           ↗ ${(job.files || []).length + (job.links || []).length}</button
                         ><button
                           class="badge ${job.paid ? 'paid' : 'pending'}"
@@ -270,4 +264,20 @@ export function renderActivity(jobs, clients) {
         .join('')}
     </div>
   </section>`;
+}
+
+export function renderTimers(job) {
+  return `<div class="stage-timers">${['production', 'review']
+    .map((stage) => {
+      const active = (job.status === 'review' ? 'review' : 'production') === stage;
+      const running = active && job.timerStartedAt;
+      const label = stage === 'production' ? 'Produ\u00e7\u00e3o' : 'Revis\u00e3o';
+      return `<button class="timerbutton ${running ? 'running' : ''}" data-timer="${esc(job.id)}"
+      ${!active || job.status === 'delivered' ? 'disabled' : ''}
+      aria-label="${running ? 'Pausar' : 'Iniciar'} ${label} de ${esc(job.title)}">
+      ${running ? '\u2161' : '\u25b7'} ${label}
+      <span data-clock="${esc(job.id)}" data-clock-stage="${stage}">${duration(stageElapsed(job, stage))}</span>
+    </button>`;
+    })
+    .join('')}</div>`;
 }

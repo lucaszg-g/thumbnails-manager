@@ -140,6 +140,8 @@ test('formulário aplica preço do cliente, soma adicionais e permite atualizar 
     const select = q('[data-status]');
     select.value = 'review';
     select.dispatchEvent(new window.Event('change', { bubbles: true }));
+    assert.equal(context.harness.getData().jobs[0].status, 'briefing');
+    q('#status-form').dispatchEvent(new window.Event('submit', { cancelable: true }));
     job = context.harness.getData().jobs[0];
     assert.equal(job.status, 'review');
     assert.equal(job.statusHistory.length, 1);
@@ -158,6 +160,26 @@ test('formulário aplica preço do cliente, soma adicionais e permite atualizar 
     const delivered = q(`[data-status="${job.id}"]`);
     delivered.value = 'delivered';
     delivered.dispatchEvent(new window.Event('change', { bubbles: true }));
+    assert.equal(q('#thumbnail-links').required, true);
+    q('#status-form').dispatchEvent(new window.Event('submit', { cancelable: true }));
+    assert.equal(context.harness.getData().jobs[0].status, 'review');
+    input('#thumbnail-links', 'javascript:alert(1)');
+    q('#status-form').dispatchEvent(new window.Event('submit', { cancelable: true }));
+    assert.equal(context.harness.getData().jobs[0].status, 'review');
+    input('#thumbnail-links', 'https://example.com/final\nhttps://example.com/source');
+    q('#status-form').dispatchEvent(new window.Event('submit', { cancelable: true }));
+    assert.equal(context.harness.getData().jobs[0].links.length, 2);
+    assert.equal(
+      JSON.parse(window.localStorage.getItem('thumbs-studio-v1')).jobs[0].links.length,
+      2,
+    );
+    context.harness.openForm('job', job.id);
+    input('#thumbnail-links', '');
+    submit();
+    assert.equal(context.harness.getData().jobs[0].links.length, 2);
+    input('#thumbnail-links', 'https://example.com/final');
+    submit();
+    assert.equal(context.harness.getData().jobs[0].links.length, 1);
     assert.match(q('.payment-summary').textContent, /1 thumb entregue/);
     q('.payment-summary').click();
     assert.equal(document.querySelectorAll('.job-card').length, 1);

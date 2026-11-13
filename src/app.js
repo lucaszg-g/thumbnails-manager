@@ -13,6 +13,7 @@ import { renderCalendarSettings, bindCalendarSettings } from './calendar-setting
 import { checkDeadlineNotifications } from './notifications.js';
 import {
   statusControl,
+  renderTimers,
   dueBadge,
   renderHero,
   viewSwitcher,
@@ -30,6 +31,8 @@ import {
   validate,
   migrate,
   elapsed,
+  stageElapsed,
+  pauseTimer,
   toggleTimer,
   safeURL,
   clientPrice,
@@ -466,14 +469,7 @@ function table() {
                   </td>
                   <td>
                     <div class="jobtools">
-                      <button
-                        class="timerbutton ${j.timerStartedAt ? 'running' : ''}"
-                        data-timer="${esc(j.id)}"
-                        aria-label="${j.timerStartedAt ? 'Pausar' : 'Iniciar'} cronômetro de ${esc(j.title)}"
-                      >
-                        ${j.timerStartedAt ? 'Ⅱ' : '▷'}
-                        <span data-clock="${esc(j.id)}">${duration(elapsed(j))}</span></button
-                      ><button class="textbutton" data-assets="${esc(j.id)}">
+                      ${renderTimers(j)}<button class="textbutton" data-assets="${esc(j.id)}">
                         ↗ ${(j.files || []).length + (j.links || []).length} anexos
                       </button>
                     </div>
@@ -820,6 +816,7 @@ function openForm(type, id) {
                   />
                 </div>
               </div>
+              ${thumbnailLinksField(item?.links || [])}
               <div class="field">
                 <label for="priority">Prioridade</label
                 ><select id="priority" name="priority">
@@ -940,6 +937,12 @@ ${esc(item?.notes || '')}</textarea>
           : 'Preço do cliente aplicado. Não é necessário preencher novamente.';
     };
     // Opening an existing job keeps its price; choosing another client uses that client's price.
+    const refreshLinkRequirement = () => {
+      modal.querySelector('#thumbnail-links').required =
+        modal.querySelector('#status').value === 'delivered';
+    };
+    modal.querySelector('#status').onchange = refreshLinkRequirement;
+    refreshLinkRequirement();
     modal.querySelector('#clientId').onchange = applyClientPrice;
     modal.querySelector('#use-client-price').onclick = applyClientPrice;
     modal.querySelector('#edit-job-price').onclick = () => {
@@ -962,8 +965,12 @@ ${esc(item?.notes || '')}</textarea>
       }
       value.currency = modal.querySelector('#currency').value;
       value.elapsedMs = item?.elapsedMs || 0;
+      value.stageElapsedMs = structuredClone(
+        item?.stageElapsedMs || { production: item?.elapsedMs || 0, review: 0 },
+      );
       value.timerStartedAt = item?.timerStartedAt || null;
-      value.links = item?.links || [];
+      value.links = readThumbnailLinks(modal.querySelector('#thumbnail-links').value, value.status);
+      if (!value.links) return;
       value.files = item?.files || [];
       value.baseValue = Number(value.value);
       value.extras = priceEditor.getExtras();
@@ -976,6 +983,8 @@ ${esc(item?.notes || '')}</textarea>
         value.status = item.status;
         setJobStatus(value, nextStatus);
       }
+      if (!item && ['production', 'review'].includes(value.status))
+        value.timerStartedAt = Date.now();
       value.paid = f.has('paid');
       if (value.paid && !value.paidAt) {
         toast('Informe a data do recebimento.');
@@ -1170,7 +1179,10 @@ function updateClocks() {
   });
   document.querySelectorAll('[data-clock]').forEach((el) => {
     const job = data.jobs.find((j) => j.id === el.dataset.clock);
-    if (job) el.textContent = duration(elapsed(job));
+    if (job)
+      el.textContent = duration(
+        el.dataset.clockStage ? stageElapsed(job, el.dataset.clockStage) : elapsed(job),
+      );
   });
 }
 // Workspace shortcuts and quick actions share the same persistence path as forms.
@@ -1189,9 +1201,69 @@ function updateJob(id, change, message) {
   if (message) toast(message);
 }
 
+function thumbnailLinksField(links = [], required = false) {
+  return `<div class="field">
+    <label for="thumbnail-links">Links relacionados à thumbnail</label>
+    <textarea id="thumbnail-links" rows="4" ${required ? 'required' : ''}
+      placeholder="https://drive.google.com/?">${esc(links.join('\n'))}</textarea>
+    <small>Um link por linha. Opcional em revisão; ao menos um link obrigatório para concluir.
+      Os links ficam salvos em Arquivos e links.</small>
+  </div>`;
+}
+
+function readThumbnailLinks(text, status) {
+  const links = [
+    ...new Set(
+      text
+        .split(/\r?\n/)
+        .map((url) => url.trim())
+        .filter(Boolean),
+    ),
+  ];
+  if (links.some((url) => !safeURL(url))) {
+    toast('Use links com http:// ou https://, um por linha.');
+    return null;
+  }
+  if (status === 'delivered' && !links.length) {
+    toast('Adicione ao menos um link relacionado à thumbnail para concluir.');
+    return null;
+  }
+  return links;
+}
+
 function changeStatus(id, status) {
-  if (!statuses[status] || data.jobs.find((job) => job.id === id)?.status === status) return;
-  updateJob(id, (job) => setJobStatus(job, status), `Movida para ${statuses[status]}.`);
+  const job = data.jobs.find((job) => job.id === id);
+  if (locked() || corrupt || !job || !statuses[status] || job.status === status) return;
+  if (!['review', 'delivered'].includes(status)) {
+    updateJob(id, (job) => setJobStatus(job, status), `Movida para ${statuses[status]}.`);
+    return;
+  }
+  // Reset the select until the transition is confirmed, including after cancellation.
+  render();
+  const modal = document.querySelector('#modal');
+  modal.innerHTML = `<div class="modalhead"><div>
+    <h2>Mover para ${esc(statuses[status])}</h2><p class="subtitle">${esc(job.title)}</p>
+    </div><button type="button" id="cancel-status" aria-label="Fechar">✕</button></div>
+    <form id="status-form" class="assets-body">
+      ${thumbnailLinksField(job.links || [], status === 'delivered')}
+      <button class="primary" type="submit">Salvar e mover</button>
+    </form>`;
+  modal.querySelector('#cancel-status').onclick = () => modal.close();
+  modal.querySelector('#status-form').onsubmit = (event) => {
+    event.preventDefault();
+    const links = readThumbnailLinks(modal.querySelector('#thumbnail-links').value, status);
+    if (!links) return;
+    updateJob(
+      id,
+      (current) => {
+        current.links = links;
+        setJobStatus(current, status);
+      },
+      `Movida para ${statuses[status]}.`,
+    );
+    if (data.jobs.find((current) => current.id === id)?.status === status) modal.close();
+  };
+  modal.showModal();
 }
 
 function bindWorkspace() {
@@ -1249,6 +1321,7 @@ function bindWorkspace() {
         status: 'briefing',
         paid: false,
         paidAt: null,
+        stageElapsedMs: { production: 0, review: 0 },
         elapsedMs: 0,
         timerStartedAt: null,
         statusHistory: [],
@@ -1471,6 +1544,12 @@ function openAssets(id) {
     modal.querySelectorAll('[data-remove-link]').forEach(
       (b) =>
         (b.onclick = () => {
+          if (job.status === 'delivered' && job.links.length === 1) {
+            toast(
+              'Uma thumbnail concluída precisa manter ao menos um link. Adicione outro antes de remover este.',
+            );
+            return;
+          }
           const previous = [...job.links];
           job.links.splice(Number(b.dataset.removeLink), 1);
           if (!persist()) {
@@ -1549,8 +1628,7 @@ async function exportBackup() {
     const snapshot = structuredClone(data);
     snapshot.exportedAt = Date.now();
     snapshot.jobs.forEach((j) => {
-      j.elapsedMs = elapsed(j, snapshot.exportedAt);
-      j.timerStartedAt = null;
+      pauseTimer(j, snapshot.exportedAt);
     });
     const attachments = [];
     for (const job of snapshot.jobs) {
@@ -1604,8 +1682,7 @@ async function importBackup(e) {
     // Restore running timers paused: a backup must not count hours since its export.
     data.jobs.forEach((j) => {
       if (j.timerStartedAt) {
-        j.elapsedMs = elapsed(j, parsed.exportedAt || j.timerStartedAt);
-        j.timerStartedAt = null;
+        pauseTimer(j, parsed.exportedAt || j.timerStartedAt);
       }
     });
     if (!persist()) {

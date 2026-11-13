@@ -18,15 +18,27 @@ export function totals(jobs, currency = 'USD') {
 export function elapsed(job, now = Date.now()) {
   return (job.elapsedMs || 0) + (job.timerStartedAt ? Math.max(0, now - job.timerStartedAt) : 0);
 }
+export function stageElapsed(job, stage, now = Date.now()) {
+  const saved = job.stageElapsedMs || { production: job.elapsedMs || 0, review: 0 };
+  const activeStage = job.status === 'review' ? 'review' : 'production';
+  return (
+    (saved[stage] || 0) +
+    (job.timerStartedAt && activeStage === stage ? Math.max(0, now - job.timerStartedAt) : 0)
+  );
+}
+export function pauseTimer(job, now = Date.now()) {
+  job.stageElapsedMs = {
+    production: stageElapsed(job, 'production', now),
+    review: stageElapsed(job, 'review', now),
+  };
+  job.elapsedMs = elapsed(job, now);
+  job.timerStartedAt = null;
+}
 export function toggleTimer(jobs, id, now = Date.now()) {
   const target = jobs.find((j) => j.id === id);
-  if (!target) return;
+  if (!target || target.status === 'delivered') return;
   const running = Boolean(target.timerStartedAt);
-  for (const job of jobs)
-    if (job.timerStartedAt) {
-      job.elapsedMs = elapsed(job, now);
-      job.timerStartedAt = null;
-    }
+  for (const job of jobs) if (job.timerStartedAt) pauseTimer(job, now);
   if (!running) target.timerStartedAt = now;
 }
 export function safeURL(value) {
@@ -82,7 +94,9 @@ export function priceBreakdown(job) {
 export function setJobStatus(job, status, now = Date.now()) {
   if (!['briefing', 'production', 'review', 'delivered'].includes(status) || job.status === status)
     return false;
+  pauseTimer(job, now);
   job.status = status;
+  if (['production', 'review'].includes(status)) job.timerStartedAt = now;
   job.statusHistory = [
     ...(job.statusHistory || []),
     { status, at: new Date(now).toISOString() },
@@ -107,6 +121,7 @@ export function migrate(data) {
       ...j,
       currency: j.currency || 'USD',
       elapsedMs: j.elapsedMs || 0,
+      stageElapsedMs: j.stageElapsedMs || { production: j.elapsedMs || 0, review: 0 },
       timerStartedAt: j.timerStartedAt || null,
       links: j.links || [],
       files: j.files || [],
@@ -209,6 +224,11 @@ export function validate(data) {
             ))) &&
         (j.currency === undefined || ['USD', 'BRL'].includes(j.currency)) &&
         (j.elapsedMs === undefined || (Number.isFinite(j.elapsedMs) && j.elapsedMs >= 0)) &&
+        (j.stageElapsedMs === undefined ||
+          (j.stageElapsedMs !== null &&
+            ['production', 'review'].every(
+              (stage) => Number.isFinite(j.stageElapsedMs[stage]) && j.stageElapsedMs[stage] >= 0,
+            ))) &&
         (j.timerStartedAt == null || (Number.isFinite(j.timerStartedAt) && j.timerStartedAt > 0)) &&
         (j.links === undefined ||
           (Array.isArray(j.links) && j.links.every((v) => typeof v === 'string' && safeURL(v)))) &&
