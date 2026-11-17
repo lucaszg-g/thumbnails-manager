@@ -7,6 +7,7 @@ import * as model from './model.js';
 import * as ui from './ui.js';
 import * as workspace from './workspace.js';
 import * as pricing from './price-editor.js';
+import { combinedJobs } from './integrations.js';
 
 test('formulário aplica preço do cliente, soma adicionais e permite atualizar o quadro', async () => {
   const dom = new JSDOM('<div id="app"></div><dialog id="modal"></dialog><div id="toast"></div>', {
@@ -43,6 +44,9 @@ test('formulário aplica preço do cliente, soma adicionais e permite atualizar 
     ...ui,
     ...workspace,
     ...pricing,
+    combinedJobs,
+    renderIntegrationSummary: () => '',
+    bindIntegrations() {},
     structuredClone,
     AbortSignal,
     queue() {},

@@ -4,6 +4,7 @@ const labels = {
   jobs: 'Thumbnails',
   clients: 'Clientes',
   finance: 'Financeiro',
+  companies: 'Empresas',
   deadlines: 'Prazos',
   tools: 'Ferramentas',
   notes: 'Notas',

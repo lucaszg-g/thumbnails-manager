@@ -15,6 +15,7 @@ for (const file of [
   'src/ui.js',
   'src/workspace.js',
   'src/calendar-settings.js',
+  'src/integrations.js',
   'src/notifications.js',
   'src/price-editor.js',
   'src/workspace.css',

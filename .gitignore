@@ -8,3 +8,4 @@ data/
 .dev.vars.*
 thumbs-backup-*.json
 *.sqlite*
+tmp/

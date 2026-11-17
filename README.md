@@ -59,7 +59,21 @@ Para instalar em outra conta, crie outro banco D1 e atualize os identificadores 
 
 O comando `node scripts/verify-deployment.mjs https://thumbs-studio.thumbs-manager.workers.dev` verifica HTTPS, arquivos PWA, bloqueio sem chave e upload/download binário no D1, removendo seu arquivo de teste ao final.
 
+## Integrações com empresas
+
+Em **Empresas**, conecte o link privado recebido de cada empresa. É possível dar um nome à conexão, atualizar manualmente e desconectar. Cada um dos dois portais pode ser conectado uma vez. As consultas são somente de leitura: altere tarefas, preços e pagamentos no portal da empresa. Um trabalho lançado manualmente e também no portal conta nas duas origens; remova o lançamento manual duplicado após conferir.
+
+O servidor atualiza as conexões a cada cinco minutos pelo cron existente, mesmo com o app fechado. Com o app aberto, a tela consulta os resultados a cada minuto, sem interromper um formulário em edição. Atualizações manuais respeitam intervalo mínimo de um minuto. No servidor local, as atualizações acontecem ao consultar o app. Falhas preservam a última cópia e exibem um aviso com a data da última atualização. Alterações no formato das APIs dos portais podem exigir manutenção dos conectores.
+
+Os totais incluem trabalhos em andamento como valores previstos, destacados separadamente. USD dos trabalhos próprios é convertido pela cotação atual para a soma em reais. O Work View usa o preço de repasse por cliente, adicionais, descontos, repasses históricos e acertos oficiais de fechamento; pagamentos parciais ficam separados dos valores pendentes. O oHero usa o preço final em BRL e os pagamentos mensais informados pelo portal. Não se presume pagamento apenas por uma thumb estar concluída. Os períodos importados usam a conclusão, quando disponível, ou a criação, no fuso de São Paulo. Acertos oficiais são linhas financeiras, sem aumentar a contagem de thumbs.
+
+As credenciais ficam criptografadas em `integrations` no D1 com a chave existente `CALENDAR_ENCRYPTION_KEY`, fora da API de workspace, dos backups JSON e do pacote público. O servidor local lê essa chave de `data/calendar-encryption-key.txt` e cria uma caso ainda não exista. Preserve a chave ao atualizar. Desconectar remove a cópia importada do app, sem alterar o portal. O backup do workspace continua contendo seus registros próprios; reconecte as empresas para recuperar as cópias importadas.
+
+Antes da publicação, aplique `0003_integrations.sql` pelo comando de migração existente. Não há novo serviço pago ou mudança de plano. O Work View é consultado em páginas de até mil registros, com limite de dez mil registros por consulta; respostas incompletas ou acima do limite preservam a cópia anterior e geram aviso.
+
 ## Recursos
+
+- **Empresas:** integra os portais da Sharps e do oHero. O painel, o Financeiro e a área Empresas começam no mês atual, com o ganho total mensal, recebido e a receber. O acumulado fica disponível em **Período → Todo o período**. É possível filtrar cada empresa ou apenas os trabalhos próprios. O pagamento é independente da etapa de produção, acompanha os dados do portal e identifica recebimentos parciais. A listagem carrega mais trabalhos sob demanda.
 
 - Painel com ganhos recebidos, saldo a receber, entregas e gráfico de seis meses.
 - Clientes com histórico e valores pendentes por cliente.

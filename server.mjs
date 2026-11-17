@@ -1,11 +1,24 @@
 import http from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import { Readable } from 'node:stream';
 import { openDatabase } from './backend/sqlite.js';
 import { handleAPI } from './backend/api.js';
 const root = process.cwd(),
   database = openDatabase(process.env.THUMBS_DB_PATH || path.join(root, 'data', 'thumbs.sqlite'));
+const keyPath = path.join(root, 'data', 'calendar-encryption-key.txt');
+await mkdir(path.dirname(keyPath), { recursive: true });
+let integrationKey = process.env.CALENDAR_ENCRYPTION_KEY;
+if (!integrationKey) {
+  try {
+    integrationKey = (await readFile(keyPath, 'utf8')).trim();
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    integrationKey = randomBytes(32).toString('base64url');
+    await writeFile(keyPath, integrationKey, { flag: 'wx' });
+  }
+}
 const types = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -26,6 +39,7 @@ const publicFiles = new Set([
   '/src/ui.js',
   '/src/workspace.js',
   '/src/calendar-settings.js',
+  '/src/integrations.js',
   '/src/notifications.js',
   '/src/price-editor.js',
   '/src/workspace.css',
@@ -50,7 +64,11 @@ const server = http.createServer(async (req, res) => {
           ? { body: Readable.toWeb(req), duplex: 'half' }
           : {}),
       });
-      const result = await handleAPI(request, { DB: database, LOCAL: true });
+      const result = await handleAPI(request, {
+        DB: database,
+        LOCAL: true,
+        CALENDAR_ENCRYPTION_KEY: integrationKey,
+      });
       res.writeHead(result.status, Object.fromEntries(result.headers));
       res.end(Buffer.from(await result.arrayBuffer()));
       return;

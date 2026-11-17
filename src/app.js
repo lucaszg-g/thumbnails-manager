@@ -10,6 +10,13 @@ import {
   financialBreakdown,
 } from './tools.js';
 import { renderCalendarSettings, bindCalendarSettings } from './calendar-settings.js';
+import {
+  renderIntegrations,
+  renderIntegrationSummary,
+  bindIntegrations,
+  pollIntegrations,
+  combinedJobs,
+} from './integrations.js';
 import { checkDeadlineNotifications } from './notifications.js';
 import {
   statusControl,
@@ -193,6 +200,7 @@ function render() {
   bindCloud();
   bindWorkspace();
   if (page === 'settings' && !locked()) bindCalendarSettings(api, render, toast);
+  if (!locked()) bindIntegrations(api, render, toast);
   updateClocks();
 }
 // Page sections and views
@@ -257,9 +265,12 @@ function chart() {
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     return {
       label: d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''),
-      value: data.jobs
-        .filter((j) => j.paid && j.paidAt?.startsWith(key))
-        .reduce((sum, j) => sum + j.value * ((j.currency || 'USD') === 'USD' ? data.rate : 1), 0),
+      value: combinedJobs(data)
+        .filter((j) => j.received && (j.paidAt || j.completedAt || j.created)?.startsWith(key))
+        .reduce(
+          (sum, j) => sum + j.received * ((j.currency || 'USD') === 'USD' ? data.rate : 1),
+          0,
+        ),
     };
   });
   const max = Math.max(100, ...months.map((m) => m.value));
@@ -505,6 +516,7 @@ function table() {
   </section>`;
 }
 function content() {
+  if (page === 'companies') return renderIntegrations(data);
   if (page === 'tools')
     return (
       heading(
@@ -527,10 +539,12 @@ function content() {
       renderHero(monthlyJobs(data.jobs)) +
       heading(
         'Seu estúdio, em números',
-        'Indicadores do mês atual. Seu histórico fica preservado em Thumbnails.',
+        month === 'all'
+          ? 'Visão acumulada do estúdio. Volte ao mês atual pelo seletor de período.'
+          : 'Ganhos do mês selecionado, reunindo seus trabalhos e empresas.',
         false,
       ) +
-      stats() +
+      (renderIntegrationSummary(data, month) || stats()) +
       /* HTML */ `<div class="middle">${chart()}${dueList()}</div>` +
       table() +
       renderActivity(data.jobs, data.clients)
@@ -557,8 +571,8 @@ function content() {
         'Seu trabalho tem valor',
         'Acompanhe recebimentos e saiba exatamente o que falta receber.',
       ) +
-      monthPicker(data.jobs, month) +
-      stats(selectedJobs()) +
+      (renderIntegrationSummary(data, month) ||
+        monthPicker(data.jobs, month) + stats(selectedJobs())) +
       chart() +
       financialBreakdown(selectedJobs(), data.rate) +
       table()
@@ -1947,7 +1961,10 @@ connect(
   },
   () => renderSyncStatus(),
 ).then(() => {
-  if (syncState.status === 'saved') refreshRate();
+  if (syncState.status === 'saved') {
+    refreshRate();
+    bindIntegrations(api, render, toast);
+  }
 });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 window.addEventListener('beforeinstallprompt', (event) => {
@@ -1987,6 +2004,15 @@ setInterval(() => {
   }
 }, 1000);
 setInterval(() => refreshRate(), 5 * 60 * 1000);
+setInterval(() => {
+  if (
+    !locked() &&
+    document.visibilityState !== 'hidden' &&
+    !document.querySelector('#modal')?.open &&
+    !document.activeElement?.closest('input, textarea, select')
+  )
+    pollIntegrations();
+}, 60000);
 window.addEventListener('online', () => {
   retry().catch(() => {});
   refreshRate();

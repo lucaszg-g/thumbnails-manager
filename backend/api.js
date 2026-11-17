@@ -1,5 +1,6 @@
 import { validate, fetchMarketQuote } from '../src/model.js';
 import { calendarCallback, handleCalendarAPI, syncCalendar } from './calendar.js';
+import { handleIntegrationsAPI } from './integrations.js';
 export const CHUNK_SIZE = 512 * 1024;
 const MAX_FILE = 20 * 1024 * 1024,
   MAX_STORAGE = 200 * 1024 * 1024;
@@ -43,6 +44,8 @@ export async function handleAPI(request, env, ctx) {
   if (!env.LOCAL && !(await authorized(request, env.ACCESS_KEY)))
     return json({ error: 'Senha incorreta. Tente novamente.' }, 401);
   try {
+    const integrationResponse = await handleIntegrationsAPI(request, env);
+    if (integrationResponse) return integrationResponse;
     const calendarResponse = await handleCalendarAPI(request, env, ctx);
     if (calendarResponse) return calendarResponse;
     if (path === '/api/exchange-rate' && request.method === 'GET') {

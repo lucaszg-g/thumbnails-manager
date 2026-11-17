@@ -1814,3 +1814,589 @@ button:disabled {
     background: var(--surface);
   }
 }
+/* Shared financial overview: full-width, independent from Settings layouts. */
+.earnings-overview {
+  width: 100%;
+  min-width: 0;
+  margin: 0 0 28px;
+  border-radius: 20px;
+}
+.earnings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 26px 28px 22px;
+}
+.earnings-header h2 {
+  margin: 8px 0 0;
+  font-size: 19px;
+  letter-spacing: -0.5px;
+}
+.earnings-period {
+  display: grid;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.earnings-period select {
+  min-width: 230px;
+  max-width: 100%;
+  padding: 10px 34px 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}
+.earnings-metrics {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  padding: 0 28px 24px;
+  gap: 24px;
+}
+.earnings-primary,
+.earnings-secondary {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+}
+.earnings-secondary {
+  border-left: 1px solid var(--line);
+  padding-left: 26px;
+}
+.earnings-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.earnings-metrics .statvalue {
+  margin: 0;
+  font-size: clamp(22px, 2.4vw, 34px);
+  line-height: 1.25;
+  letter-spacing: -1px;
+  overflow-wrap: anywhere;
+}
+.earnings-primary .statvalue {
+  color: var(--accent);
+}
+.earnings-caption {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.payment-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.paid-dot {
+  background: #7fae86;
+}
+.pending-dot {
+  background: #cfac77;
+}
+.earnings-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 28px;
+  border-top: 1px solid var(--line);
+}
+.earnings-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 26px;
+}
+.earnings-sources > span {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.earnings-sources b {
+  color: var(--text);
+  font-weight: 600;
+}
+.earnings-footer .textbutton {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+.earnings-footer svg {
+  width: 15px;
+  height: 15px;
+}
+.earnings-note {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+  margin: 0;
+  padding: 0 28px 20px;
+}
+.companies-page {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+.companies-page > .heading {
+  margin: 0;
+}
+.companies-page .heading .eyebrow {
+  display: block;
+  margin-bottom: 9px;
+}
+.companies-page .earnings-overview {
+  margin: 0;
+}
+.companies-page .earnings-metrics {
+  padding-top: 26px;
+}
+.integration-panel {
+  padding: 24px;
+  min-width: 0;
+}
+.integration-filter-panel {
+  border-radius: 16px;
+}
+.integration-filters {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr 1fr 1.25fr;
+  gap: 16px;
+}
+.integration-filters label,
+#company-connect label {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.integration-filters input,
+.integration-filters select,
+#company-connect input {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0 12px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+}
+.integration-filters input:focus,
+.integration-filters select:focus,
+.earnings-period select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.integration-origins {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  min-width: 0;
+}
+.integration-origin {
+  padding: 22px;
+  border-radius: 16px;
+  min-width: 0;
+}
+.origin-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.origin-heading h2 {
+  font-size: 13px;
+  margin: 0;
+}
+.origin-heading > span:last-child {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.origin-icon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-radius: 9px;
+  color: var(--accent);
+}
+.origin-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.origin-total {
+  display: block;
+  font-size: 25px;
+  letter-spacing: -0.8px;
+  margin: 21px 0;
+  overflow-wrap: anywhere;
+}
+.origin-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.origin-split > span {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.origin-split b {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text);
+}
+.origin-sync {
+  display: block;
+  margin-top: 14px;
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.integration-jobs-panel {
+  border-radius: 18px;
+  min-width: 0;
+}
+.integration-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.integration-section-heading h2 {
+  font-size: 16px;
+  margin: 0 0 7px;
+}
+.integration-section-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.integration-list {
+  padding: 0 24px;
+}
+.integration-job {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr) minmax(90px, auto) 110px;
+  gap: 18px;
+  align-items: center;
+  padding: 19px 0;
+  border-bottom: 1px solid var(--line);
+}
+.integration-job:last-child {
+  border-bottom: 0;
+}
+.integration-job img,
+.integration-thumb-placeholder {
+  width: 82px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.integration-thumb-placeholder {
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+.integration-thumb-placeholder svg {
+  width: 20px;
+  height: 20px;
+  opacity: 0.6;
+}
+.integration-job-info {
+  min-width: 0;
+}
+.integration-job-info > strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.integration-job small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.6;
+  margin-top: 5px;
+}
+.integration-job-info small span {
+  margin: 0 3px;
+  opacity: 0.5;
+}
+.integration-job-amount,
+.integration-job-payment {
+  text-align: right;
+}
+.integration-job-amount > strong {
+  font-size: 13px;
+  white-space: nowrap;
+}
+.integration-payment {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  padding: 6px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.integration-payment svg {
+  width: 12px;
+  height: 12px;
+}
+.integration-payment.is-paid {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.integration-payment.is-pending {
+  color: #c09a60;
+  background: rgba(183, 143, 82, 0.11);
+}
+:root[data-theme='light'] .integration-payment.is-pending {
+  color: #87602d;
+}
+.integration-list-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: center;
+  padding: 18px 24px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  color: var(--muted);
+}
+.integration-list-note {
+  margin: 0;
+  padding: 17px 24px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+.integration-connections {
+  border-radius: 16px;
+}
+.integration-connections > summary {
+  cursor: pointer;
+  padding: 20px 24px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.integration-connections > summary span {
+  float: right;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+.integration-connections p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.8;
+  margin: 0;
+}
+.integration-connections .earnings-note {
+  padding: 16px 0 0;
+  font-size: 11px;
+}
+#company-connect {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr auto;
+  align-items: end;
+  gap: 14px;
+  margin: 24px 0;
+}
+.connection-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+@media (max-width: 1100px) {
+  .integration-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .integration-origins {
+    gap: 12px;
+  }
+  .integration-origin {
+    padding: 18px;
+  }
+  .origin-heading {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .origin-heading > span:last-child {
+    margin-left: 0;
+  }
+  .earnings-metrics {
+    gap: 18px;
+  }
+  .earnings-secondary {
+    padding-left: 18px;
+  }
+}
+@media (max-width: 760px) {
+  .earnings-header {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 22px 20px;
+    gap: 18px;
+  }
+  .earnings-period {
+    width: 100%;
+  }
+  .earnings-period select {
+    width: 100%;
+    min-width: 0;
+  }
+  .earnings-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0 20px 22px;
+    gap: 22px 16px;
+  }
+  .earnings-primary {
+    grid-column: 1/-1;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  .earnings-primary .statvalue {
+    font-size: 34px;
+  }
+  .earnings-secondary {
+    padding: 0;
+    border: 0;
+  }
+  .earnings-secondary .statvalue {
+    font-size: 24px;
+  }
+  .earnings-secondary:last-child {
+    padding-left: 16px;
+    border-left: 1px solid var(--line);
+  }
+  .earnings-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 18px 20px;
+    gap: 18px;
+  }
+  .earnings-sources {
+    width: 100%;
+    gap: 12px;
+    flex-direction: column;
+  }
+  .earnings-sources > span {
+    justify-content: space-between;
+  }
+  .earnings-note {
+    padding: 0 20px 20px;
+  }
+  .integration-origins {
+    grid-template-columns: 1fr;
+  }
+  .origin-heading > span:last-child {
+    margin-left: auto;
+  }
+  .origin-total {
+    margin: 16px 0;
+  }
+  .companies-page {
+    gap: 20px;
+  }
+  .companies-page > .heading {
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .integration-panel {
+    padding: 20px;
+  }
+  .integration-list {
+    padding: 0 18px;
+  }
+  .integration-job {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 12px;
+    padding: 18px 0;
+  }
+  .integration-job img,
+  .integration-thumb-placeholder {
+    width: 64px;
+    height: 42px;
+    align-self: start;
+    margin-top: 3px;
+  }
+  .integration-job-amount {
+    grid-column: 1;
+    text-align: left;
+    min-width: 0;
+  }
+  .integration-job-payment {
+    grid-column: 2;
+    text-align: right;
+  }
+  .integration-job-amount > strong {
+    font-size: 12px;
+  }
+  .integration-section-heading {
+    padding: 20px 18px;
+  }
+  .integration-list-note {
+    padding: 16px 18px;
+  }
+  #company-connect {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 420px) {
+  .integration-filters {
+    grid-template-columns: 1fr;
+  }
+  .earnings-header h2 {
+    font-size: 17px;
+  }
+  .earnings-secondary .statvalue {
+    font-size: 20px;
+  }
+  .earnings-caption {
+    font-size: 10px;
+  }
+  .integration-section-heading {
+    flex-wrap: wrap;
+  }
+  .integration-connections > summary span {
+    float: none;
+    display: block;
+    margin-top: 8px;
+  }
+}

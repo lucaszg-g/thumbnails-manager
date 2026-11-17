@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import * as model from './model.js';
+import { combinedJobs } from './integrations.js';
 
 test('interface migra dados e apresenta valores separados; cotação conserva cache na falha', async () => {
   const fixture = {
@@ -57,6 +58,9 @@ test('interface migra dados e apresenta valores separados; cotação conserva ca
     ...model,
     ...ui,
     ...workspace,
+    combinedJobs,
+    renderIntegrationSummary: () => '',
+    bindIntegrations() {},
     document,
     navigator: {},
     syncState: { status: 'saved', message: 'Salvo no banco' },

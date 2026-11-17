@@ -21,11 +21,12 @@ function metadata() {
   localStorage.setItem(META, JSON.stringify({ revision, pending }));
 }
 export async function api(path, options = {}) {
+  const { timeoutMs = 30000, ...requestOptions } = options;
   const response = await fetch('/api/' + path, {
-    ...options,
+    ...requestOptions,
     headers: { ...(key ? { Authorization: 'Bearer ' + key } : {}), ...options.headers },
     cache: 'no-store',
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!response.ok) {
     let message = 'Não foi possível sincronizar.';
