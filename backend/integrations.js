@@ -7,7 +7,7 @@ export async function syncIntegrations(env, { force = false, fetcher = fetch } =
   const { results } = await env.DB.prepare('SELECT * FROM integrations').all();
   for (const row of results) {
     const now = Date.now();
-    if (now - row.last_attempt < (force ? 60000 : 5 * 60000)) continue;
+    if (now - row.last_attempt < (force ? 60000 : 60 * 60000)) continue;
     // A database lease prevents concurrent cron/manual refreshes from racing.
     const claim = await env.DB.prepare(
       'UPDATE integrations SET last_attempt=? WHERE id=? AND version=? AND last_attempt=?',

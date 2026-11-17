@@ -146,14 +146,43 @@ test('soma geral converte USD, mantém trabalhos próprios e conta ajustes só c
     },
   ]);
   assert.deepEqual(integrationTotals(jobs, 5), {
-    total: 75,
-    received: 55,
-    pending: 20,
-    projected: 30,
-    count: 2,
+    total: 45,
+    received: 45,
+    pending: 0,
+    projected: 0,
+    count: 1,
   });
   assert.equal(own.jobs.length, 1);
   assert.match(renderIntegrations({ rate: 5, clients: [], jobs: [] }), /Tudo junto/);
+});
+test('portais so entram no financeiro depois da entrega, mesmo com pagamento informado', () => {
+  for (const source of ['workview', 'ohero']) {
+    for (const status of ['briefing', 'production', 'review']) {
+      const job = {
+        source,
+        status,
+        currency: 'BRL',
+        value: 100,
+        received: 100,
+        paymentStatus: 'paid',
+      };
+      assert.equal(paymentState(job), 'in_progress');
+      assert.deepEqual(integrationTotals([job], 5), {
+        total: 0,
+        received: 0,
+        pending: 0,
+        projected: 0,
+        count: 0,
+      });
+      job.status = 'delivered';
+      assert.equal(paymentState(job), 'paid');
+      assert.equal(integrationTotals([job], 5).received, 100);
+      job.received = 0;
+      job.paymentStatus = 'pending';
+      assert.equal(paymentState(job), 'pending');
+      assert.equal(integrationTotals([job], 5).pending, 100);
+    }
+  }
 });
 test('períodos financeiros consideram São Paulo na virada do mês', () => {
   assert.equal(financialMonth('2026-11-01T01:00:00Z'), '2026-10');
@@ -259,7 +288,7 @@ test('filtros da interface separam empresas e trabalhos próprios com valores co
   try {
     render();
     await new Promise((r) => setImmediate(r));
-    assert.equal(document.querySelector('.statvalue').textContent, 'R$ 80,00');
+    assert.equal(document.querySelector('.statvalue').textContent, 'R$ 50,00');
     assert.equal(document.querySelectorAll('.integration-list article').length, 2);
     assert.equal(document.querySelectorAll('script').length, 0);
     assert.equal(document.querySelector('#companies-period').value, currentMonth);
@@ -267,19 +296,19 @@ test('filtros da interface separam empresas e trabalhos próprios com valores co
     assert.match(document.querySelector('main').textContent, /A receber/);
     const summary = new JSDOM(renderIntegrationSummary(data));
     assert.match(summary.window.document.body.textContent, /Ganho total do mês/);
-    assert.equal(summary.window.document.querySelector('.statvalue').textContent, 'R$ 80,00');
+    assert.equal(summary.window.document.querySelector('.statvalue').textContent, 'R$ 50,00');
     assert.equal(summary.window.document.querySelector('.settings'), null);
     summary.window.close();
     const accumulated = new JSDOM(renderIntegrationSummary(data, 'all'));
     assert.equal(
       accumulated.window.document.querySelector('.statvalue').textContent,
-      'R$ 1.080,00',
+      'R$ 1.050,00',
     );
     accumulated.window.close();
     let periodSelect = document.querySelector('#companies-period');
     periodSelect.value = 'all';
     periodSelect.onchange();
-    assert.equal(document.querySelector('.statvalue').textContent, 'R$ 1.080,00');
+    assert.equal(document.querySelector('.statvalue').textContent, 'R$ 1.050,00');
     periodSelect = document.querySelector('#companies-period');
     periodSelect.value = currentMonth;
     periodSelect.onchange();
@@ -291,7 +320,7 @@ test('filtros da interface separam empresas e trabalhos próprios com valores co
     select = document.querySelector('#companies-source');
     select.value = 'workview';
     select.onchange();
-    assert.equal(document.querySelector('.statvalue').textContent, 'R$ 30,00');
+    assert.equal(document.querySelector('.statvalue').textContent, 'R$ 0,00');
     assert.match(document.querySelector('.integration-list').textContent, /injetado/);
     let paymentSelect = document.querySelector('#companies-payment');
     paymentSelect.value = 'paid';
@@ -300,8 +329,15 @@ test('filtros da interface separam empresas e trabalhos próprios com valores co
     paymentSelect = document.querySelector('#companies-payment');
     paymentSelect.value = 'pending';
     paymentSelect.onchange();
+    assert.equal(document.querySelectorAll('.integration-job').length, 0);
+    paymentSelect = document.querySelector('#companies-payment');
+    paymentSelect.value = 'in_progress';
+    paymentSelect.onchange();
     assert.equal(document.querySelectorAll('.integration-job').length, 1);
-    assert.equal(document.querySelector('.integration-payment').textContent.trim(), 'A receber');
+    assert.equal(
+      document.querySelector('.integration-payment').textContent.trim(),
+      'Fora do financeiro',
+    );
   } finally {
     globalThis.document = previous;
     dom.window.close();
@@ -349,6 +385,23 @@ test('API exige autenticação e origem; falha preserva snapshot e não revela t
       (await DB.prepare('SELECT last_attempt FROM integrations').first()).last_attempt,
       row.last_attempt,
     );
+    let attempts = 0;
+    const fetcher = async () => {
+      attempts++;
+      throw Error('offline');
+    };
+    await DB.prepare('UPDATE integrations SET last_attempt=?')
+      .bind(Date.now() - 30 * 60000)
+      .run();
+    await syncIntegrations(env, { fetcher });
+    assert.equal(attempts, 0, 'automatic refresh waits one hour');
+    await syncIntegrations(env, { fetcher, force: true });
+    assert.equal(attempts, 1, 'manual refresh remains available before one hour');
+    await DB.prepare('UPDATE integrations SET last_attempt=?')
+      .bind(Date.now() - 61 * 60000)
+      .run();
+    await syncIntegrations(env, { fetcher });
+    assert.equal(attempts, 2, 'automatic refresh runs after one hour');
     const response = await handleAPI(
       new Request('https://app.test/api/integrations/workview', {
         method: 'DELETE',

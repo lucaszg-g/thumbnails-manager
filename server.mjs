@@ -5,6 +5,7 @@ import path from 'node:path';
 import { Readable } from 'node:stream';
 import { openDatabase } from './backend/sqlite.js';
 import { handleAPI } from './backend/api.js';
+import { syncIntegrations } from './backend/integrations.js';
 const root = process.cwd(),
   database = openDatabase(process.env.THUMBS_DB_PATH || path.join(root, 'data', 'thumbs.sqlite'));
 const keyPath = path.join(root, 'data', 'calendar-encryption-key.txt');
@@ -85,11 +86,19 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(500).end('Não foi possível atender a solicitação.');
   }
 });
-server.listen(Number(process.env.PORT) || 3000, '127.0.0.1', () =>
-  console.log('Thumbs Studio + SQLite: http://localhost:' + (process.env.PORT || 3000)),
-);
+const integrationEnv = { DB: database, CALENDAR_ENCRYPTION_KEY: integrationKey };
+const refreshIntegrations = () =>
+  syncIntegrations(integrationEnv).catch(() => console.error('Falha ao atualizar empresas.'));
+// Check hourly eligibility even when no browser tab is open.
+const integrationTimer = setInterval(refreshIntegrations, 60000);
+integrationTimer.unref();
+server.listen(Number(process.env.PORT) || 3000, '127.0.0.1', () => {
+  console.log('Thumbs Studio + SQLite: http://localhost:' + (process.env.PORT || 3000));
+  void refreshIntegrations();
+});
 process.on('SIGINT', () =>
   server.close(() => {
+    clearInterval(integrationTimer);
     database.close();
     process.exit();
   }),

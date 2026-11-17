@@ -26,12 +26,17 @@ export function combinedJobs(data, companies = state.companies) {
       received: j.paid ? j.value : 0,
       paymentStatus: j.paid ? 'paid' : 'pending',
     })),
-    ...companies.flatMap((c) => c.jobs.map((j) => ({ ...j, company: companyName(c) }))),
+    ...companies.flatMap((c) =>
+      c.jobs.map((j) => ({ ...j, source: c.id, company: companyName(c) })),
+    ),
   ];
 }
+const outsideFinance = (job) =>
+  ['workview', 'ohero'].includes(job.source) && job.status !== 'delivered';
 export function integrationTotals(jobs, rate) {
   const result = { total: 0, received: 0, pending: 0, projected: 0, count: 0 };
   for (const j of jobs) {
+    if (outsideFinance(j)) continue;
     const factor = (j.currency || 'USD') === 'USD' ? rate : 1;
     result.total += Math.round(j.value * factor * 100);
     result.received += Math.round(j.received * factor * 100);
@@ -43,6 +48,7 @@ export function integrationTotals(jobs, rate) {
   return result;
 }
 export function paymentState(job) {
+  if (outsideFinance(job)) return 'in_progress';
   if (['paid', 'pending', 'partial'].includes(job.paymentStatus)) return job.paymentStatus;
   return job.paid || (job.value > 0 && job.received >= job.value)
     ? 'paid'
@@ -82,6 +88,7 @@ function periodOptions(jobs, selected) {
   );
 }
 function paymentBadge(j) {
+  if (outsideFinance(j)) return '<span class="integration-payment">Fora do financeiro</span>';
   const paid = paymentState(j) === 'paid';
   return `<span class="integration-payment ${paid ? 'is-paid' : 'is-pending'}">${icon(paid ? 'check' : 'finance')}${paid ? 'Recebido' : 'A receber'}</span>`;
 }
@@ -120,7 +127,11 @@ export function renderIntegrations(data) {
     (j) =>
       (source === 'all' || j.source === source) &&
       (payment === 'all' ||
-        (payment === 'paid' ? paymentState(j) === 'paid' : paymentState(j) !== 'paid')) &&
+        (payment === 'paid'
+          ? paymentState(j) === 'paid'
+          : payment === 'in_progress'
+            ? paymentState(j) === 'in_progress'
+            : ['pending', 'partial'].includes(paymentState(j)))) &&
       (!search ||
         `${j.title} ${j.client}`
           .toLocaleLowerCase('pt-BR')
@@ -133,7 +144,7 @@ export function renderIntegrations(data) {
       (b.completedAt || b.created || '').localeCompare(a.completedAt || a.created || ''),
     );
   return `<div class="companies-page"><div class="heading"><div><span class="eyebrow">SEU ESTÚDIO, CONECTADO</span><h1>Trabalhos e empresas</h1><p class="subtitle">Seus ganhos do mês, com cada origem no lugar certo.</p></div><button class="secondary" id="companies-sync" ${busy ? 'disabled' : ''}>${busy ? 'Atualizando…' : 'Atualizar portais'}</button></div>${error ? `<div class="notice" role="status">${esc(error)}</div>` : ''}${!loaded ? '<p role="status">Carregando conexões…</p>' : ''}
-  <section class="panel integration-panel integration-filter-panel"><div class="integration-filters"><label>Origem<select id="companies-source">${option('all', 'Tudo junto', source)}${option('own', 'Só meus trabalhos', source)}${state.companies.map((c) => option(c.id, companyName(c), source)).join('')}</select></label><label>Período<select id="companies-period">${periodOptions(all, period)}</select></label><label>Pagamento<select id="companies-payment">${option('all', 'Todos', payment)}${option('paid', 'Recebido', payment)}${option('pending', 'A receber', payment)}</select></label><label>Buscar<input id="companies-search" type="search" placeholder="Thumb ou cliente" value="${esc(search)}"></label></div></section>
+  <section class="panel integration-panel integration-filter-panel"><div class="integration-filters"><label>Origem<select id="companies-source">${option('all', 'Tudo junto', source)}${option('own', 'Só meus trabalhos', source)}${state.companies.map((c) => option(c.id, companyName(c), source)).join('')}</select></label><label>Período<select id="companies-period">${periodOptions(all, period)}</select></label><label>Pagamento<select id="companies-payment">${option('all', 'Todos', payment)}${option('in_progress', 'Fora do financeiro', payment)}${option('paid', 'Recebido', payment)}${option('pending', 'A receber', payment)}</select></label><label>Buscar<input id="companies-search" type="search" placeholder="Thumb ou cliente" value="${esc(search)}"></label></div></section>
   <section class="panel earnings-overview">${financeCards(t, period)}<p class="earnings-note">${period === 'all' ? 'Histórico completo.' : 'Valores do mês selecionado.'} Total inclui recebido e a receber${t.projected ? `, com ${brl(t.projected)} em andamento` : ''}. USD convertido pela cotação atual.</p></section>
   <section class="integration-origins" aria-label="Ganhos por origem">${[
     { id: 'own', name: 'Meus trabalhos' },
@@ -148,7 +159,7 @@ export function renderIntegrations(data) {
       return `<article class="panel integration-origin"><div class="origin-heading"><span class="origin-icon">${icon(c.id === 'own' ? 'jobs' : 'clients')}</span><h2>${esc(companyName(c))}</h2><span>${s.count} thumbs</span></div><strong class="origin-total">${brl(s.total)}</strong><div class="origin-split"><span>Recebido<b>${brl(s.received)}</b></span><span>A receber<b>${brl(s.pending)}</b></span></div>${c.id !== 'own' ? `<small class="origin-sync">${c.error ? 'Atualização pendente' : 'Atualizado'}${c.lastSync ? ' · ' + esc(new Date(c.lastSync).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })) : ''}</small>${c.error ? `<p class="notice" role="status">${esc(c.error)}</p>` : ''}` : '<small class="origin-sync">Seus registros no estúdio</small>'}</article>`;
     })
     .join('')}</section>
-  <section class="panel integration-jobs-panel"><div class="integration-section-heading"><div><h2>Thumbnails</h2><p>${jobs.filter((j) => j.kind !== 'adjustment').length} trabalhos no período selecionado</p></div><span class="badge">${payment === 'paid' ? 'Recebido' : payment === 'pending' ? 'A receber' : 'Todos os pagamentos'}</span></div><div class="integration-list">${sorted.slice(0, visibleCount).map(renderJob).join('') || '<div class="empty"><strong>Nenhuma thumb neste filtro</strong>Escolha outra origem ou outro mês.</div>'}</div>${sorted.length > visibleCount ? `<div class="integration-list-footer"><span>${visibleCount} de ${sorted.length} registros</span><button class="secondary" id="companies-more">Mostrar mais</button></div>` : ''}<p class="integration-list-note">O pagamento acompanha o portal de cada empresa. Altere os dados da empresa no site de origem.</p></section>
+  <section class="panel integration-jobs-panel"><div class="integration-section-heading"><div><h2>Thumbnails</h2><p>${jobs.filter((j) => j.kind !== 'adjustment').length} trabalhos no período selecionado</p></div><span class="badge">${payment === 'in_progress' ? 'Fora do financeiro' : payment === 'paid' ? 'Recebido' : payment === 'pending' ? 'A receber' : 'Todos os pagamentos'}</span></div><div class="integration-list">${sorted.slice(0, visibleCount).map(renderJob).join('') || '<div class="empty"><strong>Nenhuma thumb neste filtro</strong>Escolha outra origem ou outro mês.</div>'}</div>${sorted.length > visibleCount ? `<div class="integration-list-footer"><span>${visibleCount} de ${sorted.length} registros</span><button class="secondary" id="companies-more">Mostrar mais</button></div>` : ''}<p class="integration-list-note">O pagamento acompanha o portal de cada empresa. Altere os dados da empresa no site de origem.</p></section>
   <details class="panel integration-connections"><summary>Conexões das empresas <span>${state.companies.length} conectadas</span></summary><div class="integration-panel"><p>Conecte seu link da Sharps ou do oHero. Os links ficam protegidos no servidor local. A cópia é atualizada enquanto o app estiver aberto.</p>${!state.ready && loaded ? '<div class="notice">Configure a chave de criptografia do servidor antes de conectar.</div>' : ''}<form id="company-connect"><label>Nome da empresa<input name="name" maxlength="80" placeholder="Nome para exibir"></label><label>Link privado do portal<input name="link" type="password" autocomplete="off" required placeholder="Cole o link recebido da empresa"></label><button class="primary" ${busy || !state.ready ? 'disabled' : ''}>Conectar e importar</button></form>${state.companies.map((c) => `<div class="connection-row"><span>${esc(companyName(c))}</span><button class="textbutton danger" data-company-disconnect="${c.id}" ${busy ? 'disabled' : ''}>Desconectar</button></div>`).join('')}<p class="earnings-note">Se você cadastrou uma thumb manualmente e também no portal, confira o lançamento para não contar em dobro. Falhas de atualização preservam a última cópia.</p></div></details></div>`;
 }
 
