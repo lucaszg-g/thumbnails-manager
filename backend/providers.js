@@ -77,7 +77,7 @@ export function normalizeWorkView({ tasks, clients, payouts, additionals, reconc
     if (
       !t.id ||
       !t.title ||
-      !['pending', 'in_progress', 'review', 'approved', 'rejected'].includes(t.status)
+      !['pending', 'in_progress', 'working', 'review', 'approved', 'rejected'].includes(t.status)
     )
       throw Error('Formato de tarefas alterado.');
     const c = byClient.get(t.client_id);
@@ -123,7 +123,7 @@ export function normalizeWorkView({ tasks, clients, payouts, additionals, reconc
           ? 'delivered'
           : t.status === 'pending'
             ? 'briefing'
-            : t.status === 'in_progress'
+            : ['in_progress', 'working'].includes(t.status)
               ? 'production'
               : 'review',
       sourceStatus: t.status,

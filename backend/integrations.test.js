@@ -63,6 +63,14 @@ test('Work View agrega adicionais, descontos e pagamentos parciais sem duplicar 
     45,
   );
 });
+test('Sharps aceita working como producao e exclui do financeiro', () => {
+  const data = fixtures();
+  data.tasks[0].status = 'working';
+  const jobs = normalizeWorkView(data);
+  assert.equal(jobs[0].status, 'production');
+  assert.equal(paymentState(jobs[0]), 'in_progress');
+  assert.equal(integrationTotals(jobs, 5).total, 0);
+});
 test('oHero usa preço final sem somar alterações duas vezes e só baixa meses pagos', () => {
   const data = {
     profile: {},
