@@ -8,6 +8,7 @@ import {
   monthPicker,
   monthlyJobs,
   financialBreakdown,
+  financeByOrigin,
 } from './tools.js';
 import { renderCalendarSettings, bindCalendarSettings } from './calendar-settings.js';
 import {
@@ -16,6 +17,10 @@ import {
   bindIntegrations,
   pollIntegrations,
   combinedJobs,
+  companyStatus,
+  outsideFinance,
+  jobsInPeriod,
+  renderForecast,
 } from './integrations.js';
 import { checkDeadlineNotifications } from './notifications.js';
 import {
@@ -29,7 +34,7 @@ import {
   renderPaymentSummary,
 } from './workspace.js';
 import { extrasSection, bindPriceEditor } from './price-editor.js';
-import { labels, statuses, icon, esc, money, date, initials, duration } from './ui.js';
+import { labels, statuses, icon, esc, money, date, initials, duration, modalHeader } from './ui.js';
 import { connect, queue, syncState, login, retry, reloadServer, api } from './sync.js';
 import { getFile, putFiles, removeFiles, toDataURL } from './storage.js';
 import {
@@ -68,10 +73,76 @@ try {
   corrupt = true;
 }
 let theme = localStorage.getItem('thumbs-theme') || 'dark';
+const DEFAULT_PALETTE = 'aurora';
+const DEFAULT_ACCENT = '#438865';
+const palettes = [
+  ['aurora', 'Aurora', '#938cff', '#64dbc4', '#ffab90'],
+  ['ocean', 'Atlântico', '#729eff', '#50d9db', '#f3c763'],
+  ['sunset', 'Pôr do sol', '#f597c1', '#b6a2ff', '#f9bd70'],
+  ['forest', 'Mata', '#85d5ab', '#7eaeed', '#e9a187'],
+  ['nebula', 'Nebulosa', '#ac87fd', '#ea8fce', '#79c9ff'],
+  ['citrus', 'Cítrica', '#fdce66', '#9ad968', '#fa9583'],
+  ['lagoon', 'Lagoa', '#57d4c3', '#85b6fc', '#d9a3ef'],
+  ['ceramic', 'Cerâmica', '#ed9e7f', '#aebce5', '#f0c485'],
+  ['orchid', 'Orquídea', '#dca0e9', '#9bb2ff', '#ffd189'],
+  ['glacier', 'Glacial', '#a9cdfa', '#c0edec', '#b1a5eb'],
+  ['sakura', 'Sakura', '#f2adc2', '#a9d4b9', '#a4baf4'],
+  ['retro', 'Retrô', '#ffc47e', '#ec8f87', '#89c9bb'],
+  ['lavender', 'Lavanda', '#b6a4f4', '#9ad7e5', '#e6b8cd'],
+  ['cobalt', 'Cobalto', '#818fff', '#8cd6fe', '#faca8a'],
+  ['papaya', 'Mamão', '#ffab70', '#f58eb0', '#76d6c0'],
+  ['olive', 'Oliva', '#c2ce83', '#efaa89', '#8dbaee'],
+  ['berry', 'Frutas vermelhas', '#e893b1', '#b3a0e7', '#f6c785'],
+  ['polar', 'Polar', '#8cd8ec', '#acc5fb', '#e9a8cd'],
+  ['copper', 'Cobre', '#e3a27e', '#81bab4', '#cab6ed'],
+  ['marina', 'Marina', '#8db7f1', '#77d4aa', '#ef9fbc'],
+  ['solar', 'Solar', '#f7d16c', '#e99cba', '#a1a9f8'],
+  ['jasmine', 'Jasmim', '#ded985', '#9dd8c0', '#c3a3ec'],
+  ['bloom', 'Jardim', '#9ad8ad', '#f1a5ba', '#ffcc88'],
+  ['graphic', 'Gráfica', '#c5b4ff', '#f8b579', '#83e0dd'],
+  ['custom', 'Cor única'],
+];
+const paletteRoles = ['primary', 'secondary', 'highlight'];
+const savedPalette = localStorage.getItem('thumbs-palette');
+let palette = palettes.some(([id]) => id === savedPalette) ? savedPalette : DEFAULT_PALETTE;
+const savedAccent = localStorage.getItem('thumbs-accent');
+let accent = /^#[\da-f]{6}$/i.test(savedAccent || '') ? savedAccent : DEFAULT_ACCENT;
+function applyPalette() {
+  const root = document.documentElement;
+  root.dataset.palette = palette;
+  root.style.setProperty('--custom-accent', accent);
+  const colors = palettes.find(([id]) => id === palette).slice(2);
+  paletteRoles.forEach((role, index) =>
+    root.style.setProperty('--palette-' + role, colors[index] || 'var(--custom-accent)'),
+  );
+  document
+    .querySelector('meta[name="theme-color"]')
+    ?.setAttribute('content', theme === 'dark' ? '#111321' : '#f5f6fc');
+}
+function choosePalette(id) {
+  palette = id;
+  localStorage.setItem('thumbs-palette', palette);
+  applyPalette();
+  document
+    .querySelectorAll('[data-palette-choice]')
+    .forEach((button) =>
+      button.setAttribute('aria-pressed', String(button.dataset.paletteChoice === palette)),
+    );
+  const controls = document.querySelector('#accent-controls');
+  if (controls) controls.hidden = palette !== 'custom';
+}
+function appearanceSettings() {
+  return `<section class="panel settings appearance-settings" aria-labelledby="appearance-title">
+    <div class="appearance-heading"><div><h2 id="appearance-title">Aparência</h2><p>Escolha uma paleta para o seu workspace.</p></div><button class="secondary" data-action="theme">Modo ${theme === 'dark' ? 'claro' : 'escuro'}</button></div>
+    <div class="palette-grid" role="group" aria-label="Paletas de cores">${palettes.map(([id, name, ...colors]) => `<button type="button" class="palette-choice" data-palette-choice="${id}" aria-pressed="${id === palette}"><span class="palette-swatches" aria-hidden="true">${(colors.length ? colors : ['var(--custom-accent)']).map((color) => `<i style="background:${color}"></i>`).join('')}</span><strong>${name}</strong></button>`).join('')}</div>
+    <div class="accent-controls" id="accent-controls" ${palette === 'custom' ? '' : 'hidden'}><label for="accent-picker">Cor de destaque</label><input id="accent-picker" type="color" value="${accent}"></div>
+  </section>`;
+}
 let rateBusy = false,
   rateError = false;
 let installPrompt = null;
 let jobView = localStorage.getItem('thumbs-work-view') || 'board';
+let chartMode = 'bars';
 const locked = () => ['loading', 'locked', 'conflict'].includes(syncState.status);
 let page = 'dashboard',
   filter = 'all',
@@ -121,12 +192,13 @@ function selectedJobs() {
 // Page rendering
 function render() {
   document.documentElement.dataset.theme = theme;
+  applyPalette();
   const pending = data.jobs.filter((j) => !j.paid).length;
   document.querySelector('#app').innerHTML = /* HTML */ `<div class="shell">
     <aside class="sidebar">
       <div class="brand">
         <img class="brandmark" src="/icons/icon.svg?v=3" alt="" width="38" height="38" />
-        <div>thumbs<span style="color:#a7d394">.</span><small>STUDIO MANAGER</small></div>
+        <div>thumbs<span class="brand-dot">.</span><small>STUDIO MANAGER</small></div>
       </div>
       <div class="navlabel">SEU WORKSPACE</div>
       <nav class="nav" aria-label="Navegação principal">
@@ -184,10 +256,40 @@ function render() {
     </main>
   </div>`;
   bind();
+  document.querySelectorAll('[data-palette-choice]').forEach((button) => {
+    button.onclick = () => choosePalette(button.dataset.paletteChoice);
+  });
+  const accentPicker = document.querySelector('#accent-picker');
+  if (accentPicker) {
+    accentPicker.oninput = () => {
+      accent = accentPicker.value;
+      applyPalette();
+      localStorage.setItem('thumbs-accent', accent);
+    };
+  }
+  document.querySelectorAll('.chart [data-chart-value]').forEach((button) => {
+    const show = () => {
+      const section = button.closest('.panel');
+      section.querySelector('.chart-selection').textContent = button.getAttribute('aria-label');
+      section
+        .querySelectorAll('[data-chart-value]')
+        .forEach((bar) => bar.setAttribute('aria-pressed', String(bar === button)));
+    };
+    button.onclick = show;
+    button.onfocus = show;
+    button.onpointerenter = show;
+  });
+  document.querySelectorAll('[data-chart-mode]').forEach((button) => {
+    button.onclick = () => {
+      chartMode = button.dataset.chartMode;
+      render();
+      document.querySelector(`[data-chart-mode="${chartMode}"]`)?.focus();
+    };
+  });
   if (!locked()) {
     bindTools(api, toast);
     bindNotes(data, persist, render, toast);
-    bindDeadlineCalendar(render);
+    bindDeadlineCalendar(render, (id) => openForm('job', id));
   }
   document.querySelectorAll('[data-month]').forEach(
     (el) =>
@@ -260,12 +362,13 @@ function stats(jobs = monthlyJobs(data.jobs)) {
 }
 function chart() {
   const now = new Date();
+  const jobs = combinedJobs(data).filter((j) => !outsideFinance(j));
   const months = Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     return {
       label: d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''),
-      value: combinedJobs(data)
+      value: jobs
         .filter((j) => j.received && (j.paidAt || j.completedAt || j.created)?.startsWith(key))
         .reduce(
           (sum, j) => sum + j.received * ((j.currency || 'USD') === 'USD' ? data.rate : 1),
@@ -274,32 +377,48 @@ function chart() {
     };
   });
   const max = Math.max(100, ...months.map((m) => m.value));
-  return /* HTML */ `<section class="panel">
+  const points = months
+    .map((m, i) => `${(i + 0.5) * 100},${100 - (m.value / max) * 100}`)
+    .join(' ');
+  return /* HTML */ `<section class="panel finance-trend">
     <div class="panelhead">
       <div>
         <h2>Evolução dos ganhos</h2>
         <p>Pagamentos recebidos nos últimos 6 meses</p>
       </div>
-      <span class="badge">BRL estimado</span>
+      <div class="chart-modes" role="group" aria-label="Visualização da evolução dos ganhos">
+        <button type="button" data-chart-mode="bars" aria-pressed="${chartMode === 'bars'}">
+          Barras
+        </button>
+        <button type="button" data-chart-mode="line" aria-pressed="${chartMode === 'line'}">
+          Linha
+        </button>
+      </div>
     </div>
-    <div
-      class="chart"
-      role="img"
-      aria-label="${months.map((m) => `${m.label}: ${money(m.value, 'BRL')}`).join('; ')}"
-    >
+    <div class="chart" data-mode="${chartMode}" role="group" aria-label="Ganhos recebidos por mês">
       <div class="chartaxis">
         <span>${Math.ceil(max)}</span><span>${Math.ceil(max / 2)}</span><span>0</span>
       </div>
+      ${chartMode === 'line' ? `<svg class="chart-line" viewBox="0 0 600 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="${points}" fill="none" vector-effect="non-scaling-stroke"/></svg>` : ''}
       ${months
         .map(
-          (m) =>
-            /* HTML */ `<div class="barwrap" title="${m.label}: ${money(m.value, 'BRL')}">
+          (m, i) =>
+            /* HTML */ `<button
+              class="barwrap"
+              type="button"
+              data-chart-value
+              aria-pressed="${i === months.length - 1}"
+              aria-label="${m.label} · ${money(m.value, 'BRL')}"
+            >
               <div class="bar" style="height:${(m.value / max) * 100}%"></div>
               <span>${m.label}</span>
-            </div>`,
+            </button>`,
         )
         .join('')}
     </div>
+    <output class="chart-selection"
+      >${months.at(-1).label} · ${money(months.at(-1).value, 'BRL')}</output
+    >
     <div class="chartlegend">
       <span><i class="dot"></i>Recebido · equivalente em reais</span
       ><span>Referência: US$ 1 = ${money(data.rate, 'BRL')}</span>
@@ -307,8 +426,8 @@ function chart() {
   </section>`;
 }
 function dueList(full = false) {
-  const list = data.jobs
-    .filter((j) => j.status !== 'delivered')
+  const list = combinedJobs(data)
+    .filter((j) => j.status !== 'delivered' && (j.dueAt || j.deadline) && j.kind !== 'adjustment')
     .sort((a, b) => dueTimestamp(a) - dueTimestamp(b));
   return /* HTML */ `<section class="panel">
     <div class="panelhead">
@@ -329,15 +448,22 @@ function dueList(full = false) {
                 >${date(j.deadline).split(' ').slice(1).join(' ')}
               </div>
               <div class="deadlinecopy">
-                <strong>${esc(j.title)}</strong><small>${esc(client(j.clientId).name)}</small>
+                <strong>${esc(j.title)}</strong
+                ><small
+                  >${esc(j.company || j.client)}${j.company ? ' · ' + esc(companyStatus(j)) : ''}</small
+                >
               </div>
-              ${dueBadge(j)}<button
+              ${dueBadge(j)}${
+                j.source === 'own'
+                  ? `<button
                 class="iconbtn"
                 data-edit="${esc(j.id)}"
                 aria-label="Editar ${esc(j.title)}"
               >
                 ${icon('edit')}
-              </button>
+              </button>`
+                  : '<button class="textbutton" data-page="companies">Empresas</button>'
+              }
             </div>`,
         )
         .join('') ||
@@ -516,12 +642,13 @@ function table() {
   </section>`;
 }
 function content() {
+  const combined = ['dashboard', 'deadlines'].includes(page) ? combinedJobs(data) : [];
   if (page === 'companies') return renderIntegrations(data);
   if (page === 'tools')
     return (
       heading(
         'Ferramentas criativas',
-        'Texto e refer?ncias para suas próximas thumbnails.',
+        'Texto e referências para suas próximas thumbnails.',
         false,
       ) + renderTools()
     );
@@ -536,7 +663,15 @@ function content() {
 
   if (page === 'dashboard')
     return (
-      renderHero(monthlyJobs(data.jobs)) +
+      renderHero(
+        monthlyJobs(data.jobs),
+        combined.filter(
+          (j) =>
+            j.source !== 'own' &&
+            j.kind !== 'adjustment' &&
+            (j.completedAt || j.created || '').startsWith(today().slice(0, 7)),
+        ),
+      ) +
       heading(
         'Seu estúdio, em números',
         month === 'all'
@@ -545,6 +680,7 @@ function content() {
         false,
       ) +
       (renderIntegrationSummary(data, month) || stats()) +
+      renderForecast(data) +
       /* HTML */ `<div class="middle">${chart()}${dueList()}</div>` +
       table() +
       renderActivity(data.jobs, data.clients)
@@ -562,10 +698,11 @@ function content() {
   if (page === 'deadlines')
     return (
       heading('Cada entrega no seu tempo', 'Organize as prioridades e mantenha os prazos em dia.') +
-      renderDeadlineCalendar(data.jobs, data.clients) +
+      renderDeadlineCalendar(combined.filter((j) => j.kind !== 'adjustment')) +
       dueList(true)
     );
-  if (page === 'finance')
+  if (page === 'finance') {
+    const financeJobs = jobsInPeriod(combinedJobs(data), month).filter((j) => !outsideFinance(j));
     return (
       heading(
         'Seu trabalho tem valor',
@@ -573,10 +710,12 @@ function content() {
       ) +
       (renderIntegrationSummary(data, month) ||
         monthPicker(data.jobs, month) + stats(selectedJobs())) +
+      renderForecast(data) +
       chart() +
-      financialBreakdown(selectedJobs(), data.rate) +
+      `<div class="finance-charts">${financialBreakdown(financeJobs, data.rate)}${financeByOrigin(financeJobs, data.rate)}</div>` +
       table()
     );
+  }
   if (page === 'clients')
     return /* HTML */ `${heading('Boas parcerias, grandes criações', 'Todos os seus clientes e trabalhos conectados.', 'client')}
       <div class="clientgrid">
@@ -624,6 +763,7 @@ function content() {
       ${!data.clients.length ? '<div class="panel empty"><strong>Vamos conhecer seus clientes?</strong>Cadastre o primeiro cliente para começar a organizar seus trabalhos.</div>' : ''}`;
   return (
     heading('Do seu jeito', 'Ajustes do workspace e segurança dos seus dados.', false) +
+    appearanceSettings() +
     renderCalendarSettings() +
     /* HTML */ `<section class="panel settings">
       <h2>Conversão automática USD → BRL</h2>
@@ -709,13 +849,17 @@ function openForm(type, id) {
   const selectedClientId = item?.clientId || clientFilter || data.clients[0]?.id;
   const initialPrice = clientPrice(client(selectedClientId), type === 'job' ? item : undefined);
   const modal = document.querySelector('#modal');
-  modal.innerHTML = /* HTML */ `<div class="modalhead">
-      <h2>
-        ${item ? 'Editar' : type === 'job' ? 'Nova' : 'Novo'}
-        ${type === 'job' ? 'thumbnail' : 'cliente'}
-      </h2>
-      <button data-close aria-label="Fechar">✕</button>
-    </div>
+  modal.innerHTML = /* HTML */ `${modalHeader(
+      type === 'job'
+        ? item
+          ? 'Editar thumbnail'
+          : 'Nova thumbnail'
+        : item
+          ? 'Editar cliente'
+          : 'Novo cliente',
+      type === 'job' ? 'jobs' : 'clients',
+      item?.title || item?.name,
+    )}
     <form id="edit-form">
       ${
         type === 'job'
@@ -1255,14 +1399,12 @@ function changeStatus(id, status) {
   // Reset the select until the transition is confirmed, including after cancellation.
   render();
   const modal = document.querySelector('#modal');
-  modal.innerHTML = `<div class="modalhead"><div>
-    <h2>Mover para ${esc(statuses[status])}</h2><p class="subtitle">${esc(job.title)}</p>
-    </div><button type="button" id="cancel-status" aria-label="Fechar">✕</button></div>
+  modal.innerHTML = `${modalHeader('Mover para ' + statuses[status], 'check', job.title)}
     <form id="status-form" class="assets-body">
       ${thumbnailLinksField(job.links || [], status === 'delivered')}
-      <button class="primary" type="submit">Salvar e mover</button>
+      <div class="formactions"><button class="secondary" type="button" data-close>Cancelar</button><button class="primary" type="submit">Salvar e mover</button></div>
     </form>`;
-  modal.querySelector('#cancel-status').onclick = () => modal.close();
+  modal.querySelectorAll('[data-close]').forEach((b) => (b.onclick = () => modal.close()));
   modal.querySelector('#status-form').onsubmit = (event) => {
     event.preventDefault();
     const links = readThumbnailLinks(modal.querySelector('#thumbnail-links').value, status);
@@ -1462,13 +1604,7 @@ function openAssets(id) {
   const job = data.jobs.find((j) => j.id === id);
   if (!job || corrupt) return;
   const modal = document.querySelector('#modal');
-  modal.innerHTML = /* HTML */ `<div class="modalhead">
-      <div>
-        <h2>Arquivos e links</h2>
-        <p class="subtitle">${esc(job.title)}</p>
-      </div>
-      <button id="close-assets" aria-label="Fechar">✕</button>
-    </div>
+  modal.innerHTML = /* HTML */ `${modalHeader('Arquivos e links', 'tools', job.title)}
     <div class="assets-body">
       <div class="section-label">ARQUIVOS DO TRABALHO</div>
       <label class="upload-area" for="attachments"
@@ -1493,7 +1629,7 @@ function openAssets(id) {
         Limite total: 200 MB. Mantenha também um backup.
       </p>
     </div>`;
-  modal.querySelector('#close-assets').onclick = () => modal.close();
+  modal.querySelector('[data-close]').onclick = () => modal.close();
   const draw = () => {
     modal.querySelector('#asset-files').innerHTML =
       (job.files || [])

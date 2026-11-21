@@ -3,11 +3,13 @@ import { parsePortal, readProvider } from './providers.js';
 const json = (body, status = 200) =>
   Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 const names = { workview: 'Sharps', ohero: 'oHero' };
+const minute = 60_000;
 export async function syncIntegrations(env, { force = false, fetcher = fetch } = {}) {
   const { results } = await env.DB.prepare('SELECT * FROM integrations').all();
   for (const row of results) {
     const now = Date.now();
-    if (now - row.last_attempt < (force ? 60000 : 60 * 60000)) continue;
+    const refreshInterval = force || row.error ? minute : 5 * minute;
+    if (now - row.last_attempt < refreshInterval) continue;
     // A database lease prevents concurrent cron/manual refreshes from racing.
     const claim = await env.DB.prepare(
       'UPDATE integrations SET last_attempt=? WHERE id=? AND version=? AND last_attempt=?',

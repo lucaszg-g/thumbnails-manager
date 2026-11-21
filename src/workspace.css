@@ -1242,26 +1242,6 @@ body {
 .calendar-job.complete {
   opacity: 0.65;
 }
-.finance-bar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-top: 20px;
-  flex-wrap: wrap;
-}
-.finance-bar > div {
-  flex: 1;
-  min-width: 100px;
-  height: 22px;
-  border-radius: 6px;
-  background: var(--surface-alt);
-  overflow: hidden;
-}
-.finance-bar i {
-  display: block;
-  height: 100%;
-  background: var(--accent);
-}
 @media (max-width: 1000px) {
   .tool-grid {
     grid-template-columns: 1fr;
@@ -2398,5 +2378,685 @@ button:disabled {
     float: none;
     display: block;
     margin-top: 8px;
+  }
+}
+.integration-filters {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 165px), 1fr));
+}
+.integration-payment.is-workflow {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.forecast {
+  display: grid;
+  gap: 20px;
+  padding: clamp(16px, 3vw, 26px);
+  margin-block: 20px;
+  background: linear-gradient(125deg, var(--accent-soft), var(--surface) 65%);
+}
+.forecast h2,
+.forecast p {
+  margin: 0;
+}
+.forecast p {
+  margin-top: 6px;
+}
+.forecast-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+.forecast-metrics span {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  font-size: 14px;
+}
+.forecast-metrics strong {
+  font-size: clamp(16px, 2vw, 23px);
+}
+.forecast-metrics span:first-child strong {
+  color: var(--accent);
+}
+.barwrap {
+  padding-inline: 4px;
+}
+.chart .barwrap[aria-pressed='true'] span {
+  color: var(--text);
+  font-weight: 700;
+}
+.chart-selection {
+  display: block;
+  text-align: center;
+  color: var(--accent);
+  font-weight: 700;
+  margin-top: 24px;
+}
+.calendar-panel .calendar-top,
+.calendar-options,
+.accent-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.calendar-top {
+  justify-content: space-between;
+}
+.calendar-top h2 {
+  text-transform: capitalize;
+}
+.calendar-top .calendar-heading {
+  margin: 0;
+  gap: 6px;
+}
+.calendar-options {
+  margin: 14px 0;
+}
+.calendar-options span {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+}
+.calendar-options select {
+  margin-left: 6px;
+}
+.calendar-panel .deadline-calendar {
+  min-width: 0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.calendar-panel .deadline-calendar > strong {
+  padding: 8px 0;
+  font-size: 13px;
+}
+.calendar-panel .calendar-day,
+.calendar-panel .calendar-blank {
+  min-height: clamp(47px, 8vw, 92px);
+}
+.calendar-panel .calendar-day {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.calendar-panel .calendar-day:hover {
+  background: var(--accent-soft);
+}
+.calendar-panel .calendar-day:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+.calendar-markers {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+.calendar-markers i,
+.calendar-options i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #cf9436;
+}
+.calendar-panel i[data-tone='late'] {
+  background: #e96868;
+}
+.calendar-panel i[data-tone='complete'] {
+  background: var(--accent);
+}
+.calendar-day-title {
+  width: 100%;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.calendar-agenda {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.calendar-agenda summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+.calendar-dialog-content {
+  padding: 16px 26px 24px;
+}
+.accent-controls {
+  margin-top: 12px;
+}
+.accent-controls input {
+  width: 52px;
+  height: 38px;
+  cursor: pointer;
+}
+[data-palette] {
+  --palette-primary: #938cff;
+  --palette-secondary: #64dbc4;
+  --palette-highlight: #ffab90;
+}
+:root[data-palette] {
+  --bg: #f5f6fc;
+  --surface: #fff;
+  --surface-alt: #eef0f8;
+  --text: #161a2b;
+  --muted: #515a70;
+  --line: #dbe0ed;
+  --glass: var(--surface);
+  --glass-edge: var(--line);
+  --glass-shadow: 0 2px 4px #252c4708, 0 12px 32px #252c4709;
+  --glass-chrome: #fafbffed;
+  --glass-input: #f9faff;
+  --glass-tint: #eef0f766;
+  --tone-base: #13152a;
+  --tone-weight: 52%;
+  --accent: color-mix(in srgb, var(--palette-primary) var(--tone-weight), var(--tone-base));
+  --tone-secondary: color-mix(
+    in srgb,
+    var(--palette-secondary) var(--tone-weight),
+    var(--tone-base)
+  );
+  --tone-highlight: color-mix(
+    in srgb,
+    var(--palette-highlight) var(--tone-weight),
+    var(--tone-base)
+  );
+  --accent-soft: color-mix(in srgb, var(--palette-primary) 15%, var(--surface));
+  --ambient:
+    radial-gradient(
+      ellipse at 88% 0%,
+      color-mix(in srgb, var(--palette-primary) 17%, transparent),
+      transparent 47%
+    ),
+    radial-gradient(
+      ellipse at 30% 72%,
+      color-mix(in srgb, var(--palette-secondary) 10%, transparent),
+      transparent 55%
+    );
+}
+:root[data-theme='dark'][data-palette] {
+  --bg: #111321;
+  --surface: #1a1e30;
+  --surface-alt: #22263b;
+  --text: #f0f2fc;
+  --muted: #aab3cc;
+  --line: #343b55;
+  --glass-chrome: #15182aee;
+  --glass-input: #15192a;
+  --glass-tint: #ffffff08;
+  --glass-shadow: 0 2px 4px #090a1526, 0 12px 32px #090a1520;
+  --tone-base: #fff;
+  --tone-weight: 70%;
+  --accent-soft: color-mix(in srgb, var(--palette-primary) 17%, var(--surface));
+}
+.brand-dot {
+  color: var(--tone-secondary);
+}
+.sidebar .nav button {
+  min-height: 44px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+.sidebar .nav button.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  box-shadow: inset 3px 0 var(--accent);
+}
+.sidebar .nav button.active:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.topbar .breadcrumb strong {
+  font-weight: 750;
+}
+.heading h1 {
+  font-size: clamp(1.65rem, 2.55vw, 2.35rem);
+  letter-spacing: -0.045em;
+}
+.content h2 {
+  font-size: 1.125rem;
+}
+.content .subtitle,
+.content .panelhead p,
+.integration-filters label {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.primary {
+  background: color-mix(in srgb, var(--palette-primary) 53%, white);
+  color: #141727;
+  font-weight: 750;
+}
+.primary:hover {
+  filter: brightness(1.06);
+}
+.shell :is(button, a, input, select, textarea):focus-visible,
+dialog :is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+:root[data-palette] .studio-hero {
+  background:
+    radial-gradient(
+      ellipse at 94% 8%,
+      color-mix(in srgb, var(--palette-secondary) 24%, transparent),
+      transparent 54%
+    ),
+    linear-gradient(120deg, var(--surface) 16%, var(--accent-soft));
+  border-color: color-mix(in srgb, var(--palette-primary) 30%, var(--line));
+}
+.studio-hero::after {
+  border-color: color-mix(in srgb, var(--palette-secondary) 40%, transparent);
+  box-shadow:
+    0 0 0 20px color-mix(in srgb, var(--palette-secondary) 8%, transparent),
+    0 0 0 40px color-mix(in srgb, var(--palette-secondary) 5%, transparent);
+}
+.studio-hero > div {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+.content .studio-hero h2 {
+  font-size: clamp(2rem, 4vw, 3.4rem);
+}
+.studio-hero p {
+  font-size: 0.93rem;
+  max-width: 35ch;
+}
+.studio-hero .hero-actions {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.hero-progress {
+  background: color-mix(in srgb, var(--surface) 74%, transparent);
+  border-color: var(--line);
+}
+.progress-track i {
+  background: linear-gradient(90deg, var(--palette-primary), var(--palette-secondary));
+}
+.hero-counters button {
+  min-height: 66px;
+}
+.hero-counters button:hover {
+  border-color: var(--tone-secondary);
+}
+.hero-counters button:nth-child(2) strong {
+  color: var(--tone-highlight);
+}
+.hero-counters button:nth-child(3) strong {
+  color: var(--tone-secondary);
+}
+.earnings-primary,
+.forecast {
+  background: linear-gradient(130deg, var(--accent-soft), var(--surface) 80%);
+}
+.forecast-metrics span:nth-child(2) strong,
+.earnings-secondary:has(.paid-dot) .statvalue {
+  color: var(--tone-secondary);
+}
+.forecast-metrics span:nth-child(3) strong {
+  color: var(--tone-highlight);
+}
+.statlabel svg,
+.origin-icon,
+.tool-symbol {
+  color: var(--tone-secondary);
+  background: color-mix(in srgb, var(--palette-secondary) 14%, var(--surface));
+  border-radius: 10px;
+}
+.stat:nth-child(2) .statlabel svg {
+  color: var(--tone-highlight);
+  background: color-mix(in srgb, var(--palette-highlight) 14%, var(--surface));
+}
+.calendar-panel .calendar-day:hover {
+  background: color-mix(in srgb, var(--palette-secondary) 15%, var(--surface));
+}
+.appearance-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.palette-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr));
+  gap: 12px;
+}
+.palette-choice {
+  display: grid;
+  align-content: start;
+  text-align: left;
+  gap: 6px;
+  padding: 12px;
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.palette-choice[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.palette-swatches {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  height: 32px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+.palette-swatches i:only-child {
+  grid-column: 1 / -1;
+}
+.accent-controls[hidden] {
+  display: none;
+}
+
+.finance-trend .panelhead {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.finance-trend .chart {
+  gap: 0;
+}
+.finance-trend .chart .bar {
+  background: linear-gradient(0deg, var(--palette-primary), var(--palette-secondary));
+}
+.finance-trend .chart[data-mode='bars'] .barwrap[aria-pressed='true'] .bar {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 3px var(--accent);
+}
+.finance-trend .chartlegend .dot {
+  background: var(--palette-secondary);
+}
+.chart-modes {
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  gap: 3px;
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+.chart-modes button {
+  padding: 7px 12px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+.chart-modes button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+}
+.chart-line {
+  position: absolute;
+  inset: 15px 0 21px 37px;
+  width: calc(100% - 37px);
+  height: calc(100% - 36px);
+  overflow: visible;
+  pointer-events: none;
+  stroke: var(--accent);
+  stroke-width: 2.5px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.finance-trend .chart[data-mode='line'] .barwrap .bar {
+  position: relative;
+  background: transparent;
+  min-height: 0;
+}
+.chart[data-mode='line'] .bar::before {
+  position: absolute;
+  content: '';
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  background: var(--accent);
+}
+.chart[data-mode='line'] .barwrap[aria-pressed='true'] .bar::before {
+  background: var(--palette-secondary);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.finance-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 16px;
+  margin-block: 16px;
+}
+.finance-charts > .panel {
+  margin: 0;
+}
+.finance-donut-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: center;
+  margin-top: 18px;
+}
+.finance-donut {
+  width: 142px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(var(--palette-secondary) var(--percent), var(--palette-highlight) 0);
+}
+.finance-donut.is-empty {
+  background: var(--line);
+}
+.finance-donut span {
+  min-width: 0;
+  width: 76%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  border-radius: 50%;
+  padding: 8px;
+  font-weight: 750;
+  font-size: 0.875rem;
+  background: var(--surface);
+}
+.finance-donut-layout dl {
+  flex: 1 0 145px;
+  margin: 0;
+}
+.finance-donut-layout dl div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  padding-block: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.finance-donut-layout dt {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.finance-donut-layout dd {
+  margin: 0;
+  font-weight: 750;
+}
+.finance-donut-layout dt i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--palette-secondary);
+}
+.finance-donut-layout dl div + div i {
+  background: var(--palette-highlight);
+}
+.origin-chart-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 7px 10px;
+  align-items: center;
+  margin-top: 16px;
+}
+.origin-chart-row > div {
+  grid-column: 1 / -1;
+  height: 8px;
+  border-radius: 8px;
+  background: var(--surface-alt);
+}
+.origin-chart-row i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--palette-primary);
+}
+.origin-chart-row:nth-of-type(2) i {
+  background: var(--palette-secondary);
+}
+.origin-chart-row:nth-of-type(3) i {
+  background: var(--palette-highlight);
+}
+
+#modal {
+  width: min(660px, calc(100% - 24px));
+  max-height: min(86dvh, 820px);
+  border-radius: 20px;
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--palette-primary) 30%, var(--line));
+  scrollbar-color: var(--line) var(--surface);
+}
+#modal::backdrop {
+  background: #0b1024b5;
+  backdrop-filter: blur(7px);
+}
+#modal .modalhead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  padding: clamp(14px, 3vw, 24px);
+  background:
+    radial-gradient(
+      ellipse at top right,
+      color-mix(in srgb, var(--palette-secondary) 17%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(115deg, var(--accent-soft), var(--surface));
+}
+.modalhead h2 {
+  font-size: clamp(1.125rem, 3vw, 1.5rem);
+  overflow-wrap: anywhere;
+}
+.modalhead .subtitle {
+  margin-top: 4px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.modal-symbol,
+.modal-close {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+}
+.modal-symbol {
+  width: 45px;
+  aspect-ratio: 1;
+  border-radius: 13px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.modal-close {
+  width: 42px;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background: var(--surface);
+}
+.modal-symbol svg,
+.modal-close svg {
+  width: 20px;
+  height: 20px;
+}
+#modal :is(.assets-body, #edit-form, .calendar-dialog-content) {
+  padding: clamp(16px, 4vw, 26px);
+}
+#modal .formactions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  margin-top: 18px;
+}
+#modal .calendar-job {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+#modal .calendar-job:first-child {
+  margin-top: 0;
+}
+#modal .calendar-job small {
+  margin-top: 4px;
+  color: var(--muted);
+}
+#modal .upload-area {
+  border-radius: 12px;
+  background: var(--accent-soft);
+}
+@media (prefers-reduced-motion: no-preference) {
+  #modal[open] {
+    animation: modal-enter 170ms ease-out;
+  }
+  @keyframes modal-enter {
+    from {
+      opacity: 0;
+      transform: translateY(6px) scale(0.99);
+    }
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .palette-choice,
+  .hero-counters button,
+  .tool-nav-card {
+    transition:
+      border-color 150ms ease,
+      background-color 150ms ease,
+      transform 150ms ease;
+  }
+  .palette-choice:hover,
+  .hero-counters button:hover,
+  .tool-nav-card:hover {
+    transform: translateY(-2px);
+  }
+}
+@media (max-width: 540px) {
+  .calendar-day-title {
+    display: none;
+  }
+  .calendar-panel .calendar-day {
+    padding: 5px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bar,
+  .calendar-day {
+    transition: background-color 180ms ease;
+  }
+  .studio-hero .progress-track i {
+    animation: fill-progress 500ms ease-out both;
+    transform-origin: left;
+  }
+  @keyframes fill-progress {
+    from {
+      transform: scaleX(0);
+    }
   }
 }

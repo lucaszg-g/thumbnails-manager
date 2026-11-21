@@ -1,7 +1,80 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { convertCase, youtubeId, monthlyJobs, renderNotes, financialBreakdown } from './tools.js';
-import { migrate, validate } from './model.js';
+import { JSDOM } from 'jsdom';
+import {
+  convertCase,
+  youtubeId,
+  monthlyJobs,
+  renderNotes,
+  financialBreakdown,
+  renderDeadlineCalendar,
+  bindDeadlineCalendar,
+} from './tools.js';
+import { migrate, today, validate } from './model.js';
+
+test('calendário abre detalhes do dia, respeita o filtro e encaminha para edição', () => {
+  const month = today().slice(0, 7);
+  const jobs = [
+    {
+      id: 'own-1',
+      title: 'Thumb própria',
+      client: 'Cliente',
+      status: 'delivered',
+      source: 'own',
+      deadline: month + '-01',
+    },
+    {
+      id: 'company-1',
+      title: 'Thumb da empresa',
+      company: 'Sharps',
+      status: 'review',
+      source: 'workview',
+      deadline: month + '-01',
+    },
+  ];
+  const dom = new JSDOM('<main></main><dialog id="modal"></dialog>');
+  const previous = globalThis.document;
+  const doc = dom.window.document;
+  globalThis.document = doc;
+  let edited;
+  const render = () => {
+    doc.querySelector('main').innerHTML = renderDeadlineCalendar(jobs);
+    bindDeadlineCalendar(render, (id) => {
+      edited = id;
+    });
+  };
+  const dialog = doc.querySelector('dialog');
+  dialog.showModal = () => {
+    dialog.open = true;
+  };
+  dialog.close = () => {
+    dialog.open = false;
+    dialog.dispatchEvent(new dom.window.Event('close'));
+  };
+  const clickDay = (day) => doc.querySelector(`[data-calendar-day="${month}-${day}"]`).click();
+  try {
+    render();
+    clickDay('01');
+    assert.equal(dialog.open, true);
+    assert.match(dialog.textContent, /Thumb própria/);
+    assert.match(dialog.textContent, /Sharps · Aguardando aprovação/);
+    dialog.querySelector('[data-edit]').click();
+    assert.equal(dialog.open, false);
+    assert.equal(edited, 'own-1');
+    clickDay('02');
+    assert.match(dialog.textContent, /Nenhuma entrega/);
+    dialog.querySelector('[data-close]').click();
+    const filter = doc.querySelector('#calendar-filter');
+    filter.value = 'open';
+    filter.onchange();
+    clickDay('01');
+    assert.doesNotMatch(dialog.textContent, /Thumb própria/);
+    assert.match(dialog.textContent, /Thumb da empresa/);
+  } finally {
+    globalThis.document = previous;
+    dom.window.close();
+  }
+});
 test('conversor preserva Unicode e respeita regras locais e palavras', () => {
   assert.equal(convertCase('ação Ελληνικά русский', 'upper'), 'AÇÃO ΕΛΛΗΝΙΚΆ РУССКИЙ');
   assert.equal(convertCase('istanbul I', 'upper', 'tr'), 'İSTANBUL I');

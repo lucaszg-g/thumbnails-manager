@@ -8,6 +8,9 @@ let state = { companies: [], ready: false },
 let source = 'all',
   period = today().slice(0, 7),
   payment = 'all',
+  status = 'all',
+  dateFrom = '',
+  dateTo = '',
   search = '',
   visibleCount = 60;
 let apiRef, renderRef;
@@ -27,12 +30,65 @@ export function combinedJobs(data, companies = state.companies) {
       paymentStatus: j.paid ? 'paid' : 'pending',
     })),
     ...companies.flatMap((c) =>
-      c.jobs.map((j) => ({ ...j, source: c.id, company: companyName(c) })),
+      c.jobs.map((j) => ({
+        ...j,
+        source: c.id,
+        company: companyName(c),
+        dueAt: j.dueAt || (j.deadline?.includes('T') ? j.deadline : undefined),
+        deadline: j.deadline?.slice(0, 10),
+      })),
     ),
   ];
 }
-const outsideFinance = (job) =>
-  ['workview', 'ohero'].includes(job.source) && job.status !== 'delivered';
+export const outsideFinance = (job) =>
+  !!job.source && job.source !== 'own' && job.status !== 'delivered';
+const workflowLabels = {
+  briefing: 'A iniciar',
+  production: 'Trabalhando',
+  review: 'Aguardando aprovação',
+  rejected: 'Solicitada revisão',
+  delivered: 'Aprovada',
+  adjustment: 'Acerto financeiro',
+};
+const workflowKey = (j) =>
+  j.kind === 'adjustment' ? 'adjustment' : j.sourceStatus === 'rejected' ? 'rejected' : j.status;
+export const companyStatus = (j) =>
+  j.source === 'own' ? statuses[j.status] || j.status : workflowLabels[workflowKey(j)] || j.status;
+
+export function monthlyForecast(jobs, rate, now = today()) {
+  const month = now.slice(0, 7);
+  const [year, index] = month.split('-').map(Number);
+  const days = new Date(year, index, 0).getDate();
+  let elapsed = 0;
+  let remaining = 0;
+  for (let day = 1; day <= days; day++) {
+    const weekday = new Date(year, index - 1, day).getDay();
+    if (weekday === 0 || weekday === 6) continue;
+    if (day <= Number(now.slice(8))) elapsed++;
+    else remaining++;
+  }
+  const produced = jobs.filter((job) => {
+    const deliveredAt = job.statusHistory?.findLast((entry) => entry.status === 'delivered')?.at;
+    const day = (job.completedAt || deliveredAt || job.created || '').slice(0, 10);
+    return (
+      job.kind !== 'adjustment' && job.status === 'delivered' && day.startsWith(month) && day <= now
+    );
+  });
+  const accrued = integrationTotals(produced, rate).total;
+  const daily = elapsed ? accrued / elapsed : 0;
+  return {
+    accrued,
+    daily,
+    remaining,
+    projected: accrued + daily * remaining,
+    count: produced.length,
+  };
+}
+
+export function renderForecast(data) {
+  const f = monthlyForecast(combinedJobs(data), data.rate);
+  return `<section class="panel forecast"><div><h2>Previsão até o fim do mês</h2><p>${f.count ? 'A estimativa soma o valor das entregas e aprovações do mês à média diária multiplicada pelos dias úteis restantes.' : 'A estimativa começa quando houver uma entrega ou aprovação neste mês.'}</p></div><div class="forecast-metrics"><span>Estimativa<strong>${f.count ? brl(f.projected) : '—'}</strong></span><span>Gerado no mês<strong>${brl(f.accrued)}</strong></span><span>Média por dia útil<strong>${f.count ? brl(f.daily) : '—'}</strong></span><span>Dias úteis restantes<strong>${f.remaining}</strong></span></div></section>`;
+}
 export function integrationTotals(jobs, rate) {
   const result = { total: 0, received: 0, pending: 0, projected: 0, count: 0 };
   for (const j of jobs) {
@@ -62,6 +118,7 @@ const sourceName = (j) =>
     : j.company || (j.source === 'workview' ? 'Sharps' : 'oHero');
 export const referenceMonth = (j) =>
   j.referenceMonth || (j.completedAt || j.created || '').slice(0, 7);
+const jobDate = (j) => (j.completedAt || j.created || '').slice(0, 10);
 export function jobsInPeriod(jobs, selected = today().slice(0, 7)) {
   return selected === 'all' ? jobs : jobs.filter((j) => referenceMonth(j) === selected);
 }
@@ -88,7 +145,8 @@ function periodOptions(jobs, selected) {
   );
 }
 function paymentBadge(j) {
-  if (outsideFinance(j)) return '<span class="integration-payment">Fora do financeiro</span>';
+  if (outsideFinance(j))
+    return `<span class="integration-payment is-workflow">${esc(companyStatus(j))}</span>`;
   const paid = paymentState(j) === 'paid';
   return `<span class="integration-payment ${paid ? 'is-paid' : 'is-pending'}">${icon(paid ? 'check' : 'finance')}${paid ? 'Recebido' : 'A receber'}</span>`;
 }
@@ -119,19 +177,20 @@ export function renderIntegrationSummary(data, selected = today().slice(0, 7)) {
 }
 function renderJob(j) {
   const partial = paymentState(j) === 'partial';
-  return `<article class="integration-job">${j.thumbnail ? `<img src="${esc(j.thumbnail)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="integration-thumb-placeholder">${icon('jobs')}</span>`}<div class="integration-job-info"><strong>${esc(j.title)}</strong><small>${esc(sourceName(j))} <span>·</span> ${esc(j.client)}</small><small>${esc(j.kind === 'adjustment' ? 'Acerto financeiro' : statuses[j.status] || j.status)} <span>·</span> ${esc(monthLabel(referenceMonth(j)))}</small></div><div class="integration-job-amount"><strong>${money(j.value, j.currency || 'USD')}</strong>${partial ? `<small>${money(j.received, j.currency || 'USD')} já recebido</small>` : ''}</div><div class="integration-job-payment">${paymentBadge(j)}${partial ? `<small>Falta ${money(j.value - j.received, j.currency || 'USD')}</small>` : ''}</div></article>`;
+  return `<article class="integration-job">${j.thumbnail ? `<img src="${esc(j.thumbnail)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="integration-thumb-placeholder">${icon('jobs')}</span>`}<div class="integration-job-info"><strong>${esc(j.title)}</strong><small>${esc(sourceName(j))} <span>·</span> ${esc(j.client)}</small><small>${esc(companyStatus(j))} <span>·</span> ${esc(monthLabel(referenceMonth(j)))}</small></div><div class="integration-job-amount"><strong>${money(j.value, j.currency || 'USD')}</strong>${partial ? `<small>${money(j.received, j.currency || 'USD')} já recebido</small>` : ''}</div><div class="integration-job-payment">${paymentBadge(j)}${partial ? `<small>Falta ${money(j.value - j.received, j.currency || 'USD')}</small>` : ''}</div></article>`;
 }
 export function renderIntegrations(data) {
   const all = combinedJobs(data);
   const jobs = jobsInPeriod(all, period).filter(
     (j) =>
       (source === 'all' || j.source === source) &&
+      (status === 'all' || workflowKey(j) === status) &&
+      (!dateFrom || jobDate(j) >= dateFrom) &&
+      (!dateTo || jobDate(j) <= dateTo) &&
       (payment === 'all' ||
         (payment === 'paid'
           ? paymentState(j) === 'paid'
-          : payment === 'in_progress'
-            ? paymentState(j) === 'in_progress'
-            : ['pending', 'partial'].includes(paymentState(j)))) &&
+          : ['pending', 'partial'].includes(paymentState(j)))) &&
       (!search ||
         `${j.title} ${j.client}`
           .toLocaleLowerCase('pt-BR')
@@ -140,11 +199,21 @@ export function renderIntegrations(data) {
   const t = integrationTotals(jobs, data.rate);
   const sorted = jobs
     .slice()
-    .sort((a, b) =>
-      (b.completedAt || b.created || '').localeCompare(a.completedAt || a.created || ''),
+    .sort(
+      (a, b) =>
+        Number(outsideFinance(b)) - Number(outsideFinance(a)) ||
+        jobDate(b).localeCompare(jobDate(a)),
     );
   return `<div class="companies-page"><div class="heading"><div><span class="eyebrow">SEU ESTÚDIO, CONECTADO</span><h1>Trabalhos e empresas</h1><p class="subtitle">Seus ganhos do mês, com cada origem no lugar certo.</p></div><button class="secondary" id="companies-sync" ${busy ? 'disabled' : ''}>${busy ? 'Atualizando…' : 'Atualizar portais'}</button></div>${error ? `<div class="notice" role="status">${esc(error)}</div>` : ''}${!loaded ? '<p role="status">Carregando conexões…</p>' : ''}
-  <section class="panel integration-panel integration-filter-panel"><div class="integration-filters"><label>Origem<select id="companies-source">${option('all', 'Tudo junto', source)}${option('own', 'Só meus trabalhos', source)}${state.companies.map((c) => option(c.id, companyName(c), source)).join('')}</select></label><label>Período<select id="companies-period">${periodOptions(all, period)}</select></label><label>Pagamento<select id="companies-payment">${option('all', 'Todos', payment)}${option('in_progress', 'Fora do financeiro', payment)}${option('paid', 'Recebido', payment)}${option('pending', 'A receber', payment)}</select></label><label>Buscar<input id="companies-search" type="search" placeholder="Thumb ou cliente" value="${esc(search)}"></label></div></section>
+  <section class="panel integration-panel integration-filter-panel"><div class="integration-filters"><label>Empresa<select id="companies-source">${option('all', 'Todas as origens', source)}${option('own', 'Só meus trabalhos', source)}${state.companies.map((c) => option(c.id, companyName(c), source)).join('')}</select></label><label>Período<select id="companies-period">${periodOptions(all, period)}</select></label><label>Status<select id="companies-status">${option('all', 'Todos', status)}${Object.entries(
+    workflowLabels,
+  )
+    .map(([key, label]) =>
+      option(key, key === 'delivered' ? 'Aprovada ou entregue' : label, status),
+    )
+    .join(
+      '',
+    )}</select></label><label>De<input id="companies-from" type="date" value="${esc(dateFrom)}" max="${esc(dateTo)}"></label><label>Até<input id="companies-to" type="date" value="${esc(dateTo)}" min="${esc(dateFrom)}"></label><label>Pagamento<select id="companies-payment">${option('all', 'Todos', payment)}${option('paid', 'Recebido', payment)}${option('pending', 'A receber', payment)}</select></label><label>Buscar<input id="companies-search" type="search" placeholder="Thumb ou cliente" value="${esc(search)}"></label></div><p class="earnings-note">O intervalo usa a data de conclusão ou, quando ainda pendente, a data de criação.</p></section>
   <section class="panel earnings-overview">${financeCards(t, period)}<p class="earnings-note">${period === 'all' ? 'Histórico completo.' : 'Valores do mês selecionado.'} Total inclui recebido e a receber${t.projected ? `, com ${brl(t.projected)} em andamento` : ''}. USD convertido pela cotação atual.</p></section>
   <section class="integration-origins" aria-label="Ganhos por origem">${[
     { id: 'own', name: 'Meus trabalhos' },
@@ -159,7 +228,7 @@ export function renderIntegrations(data) {
       return `<article class="panel integration-origin"><div class="origin-heading"><span class="origin-icon">${icon(c.id === 'own' ? 'jobs' : 'clients')}</span><h2>${esc(companyName(c))}</h2><span>${s.count} thumbs</span></div><strong class="origin-total">${brl(s.total)}</strong><div class="origin-split"><span>Recebido<b>${brl(s.received)}</b></span><span>A receber<b>${brl(s.pending)}</b></span></div>${c.id !== 'own' ? `<small class="origin-sync">${c.error ? 'Atualização pendente' : 'Atualizado'}${c.lastSync ? ' · ' + esc(new Date(c.lastSync).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })) : ''}</small>${c.error ? `<p class="notice" role="status">${esc(c.error)}</p>` : ''}` : '<small class="origin-sync">Seus registros no estúdio</small>'}</article>`;
     })
     .join('')}</section>
-  <section class="panel integration-jobs-panel"><div class="integration-section-heading"><div><h2>Thumbnails</h2><p>${jobs.filter((j) => j.kind !== 'adjustment').length} trabalhos no período selecionado</p></div><span class="badge">${payment === 'in_progress' ? 'Fora do financeiro' : payment === 'paid' ? 'Recebido' : payment === 'pending' ? 'A receber' : 'Todos os pagamentos'}</span></div><div class="integration-list">${sorted.slice(0, visibleCount).map(renderJob).join('') || '<div class="empty"><strong>Nenhuma thumb neste filtro</strong>Escolha outra origem ou outro mês.</div>'}</div>${sorted.length > visibleCount ? `<div class="integration-list-footer"><span>${visibleCount} de ${sorted.length} registros</span><button class="secondary" id="companies-more">Mostrar mais</button></div>` : ''}<p class="integration-list-note">O pagamento acompanha o portal de cada empresa. Altere os dados da empresa no site de origem.</p></section>
+  <section class="panel integration-jobs-panel"><div class="integration-section-heading"><div><h2>Thumbnails</h2><p>${jobs.filter((j) => j.kind !== 'adjustment').length} trabalhos no período selecionado</p></div><span class="badge">${payment === 'paid' ? 'Recebido' : payment === 'pending' ? 'A receber' : 'Todos os pagamentos'}</span></div><div class="integration-list">${sorted.slice(0, visibleCount).map(renderJob).join('') || '<div class="empty"><strong>Nenhuma thumb neste filtro</strong>Escolha outra origem ou outro mês.</div>'}</div>${sorted.length > visibleCount ? `<div class="integration-list-footer"><span>${visibleCount} de ${sorted.length} registros</span><button class="secondary" id="companies-more">Mostrar mais</button></div>` : ''}<p class="integration-list-note">O pagamento acompanha o portal de cada empresa. Altere os dados da empresa no site de origem.</p></section>
   <details class="panel integration-connections"><summary>Conexões das empresas <span>${state.companies.length} conectadas</span></summary><div class="integration-panel"><p>Conecte seu link da Sharps ou do oHero. Os links ficam protegidos no servidor local. A cópia é atualizada enquanto o app estiver aberto.</p>${!state.ready && loaded ? '<div class="notice">Configure a chave de criptografia do servidor antes de conectar.</div>' : ''}<form id="company-connect"><label>Nome da empresa<input name="name" maxlength="80" placeholder="Nome para exibir"></label><label>Link privado do portal<input name="link" type="password" autocomplete="off" required placeholder="Cole o link recebido da empresa"></label><button class="primary" ${busy || !state.ready ? 'disabled' : ''}>Conectar e importar</button></form>${state.companies.map((c) => `<div class="connection-row"><span>${esc(companyName(c))}</span><button class="textbutton danger" data-company-disconnect="${c.id}" ${busy ? 'disabled' : ''}>Desconectar</button></div>`).join('')}<p class="earnings-note">Se você cadastrou uma thumb manualmente e também no portal, confira o lançamento para não contar em dobro. Falhas de atualização preservam a última cópia.</p></div></details></div>`;
 }
 
@@ -199,8 +268,20 @@ export function bindIntegrations(api, render, toast) {
       };
   };
   bindSelect('companies-source', (v) => (source = v));
-  bindSelect('companies-period', (v) => (period = v));
+  bindSelect('companies-period', (v) => {
+    period = v;
+    dateFrom = dateTo = '';
+  });
   bindSelect('companies-payment', (v) => (payment = v));
+  bindSelect('companies-status', (v) => (status = v));
+  bindSelect('companies-from', (v) => {
+    dateFrom = v;
+    period = 'all';
+  });
+  bindSelect('companies-to', (v) => {
+    dateTo = v;
+    period = 'all';
+  });
   const more = document.getElementById('companies-more');
   if (more)
     more.onclick = () => {

@@ -7,7 +7,13 @@ import * as model from './model.js';
 import * as ui from './ui.js';
 import * as workspace from './workspace.js';
 import * as pricing from './price-editor.js';
-import { combinedJobs } from './integrations.js';
+import {
+  combinedJobs,
+  companyStatus,
+  jobsInPeriod,
+  outsideFinance,
+  renderForecast,
+} from './integrations.js';
 
 test('formulário aplica preço do cliente, soma adicionais e permite atualizar o quadro', async () => {
   const dom = new JSDOM('<div id="app"></div><dialog id="modal"></dialog><div id="toast"></div>', {
@@ -32,6 +38,7 @@ test('formulário aplica preço do cliente, soma adicionais e permite atualizar 
     jobs: [],
   };
   window.localStorage.setItem('thumbs-studio-v1', JSON.stringify(fixture));
+  window.localStorage.setItem('thumbs-accent', '#8844bb');
   window.HTMLDialogElement.prototype.showModal = function () {
     this.open = true;
   };
@@ -45,8 +52,14 @@ test('formulário aplica preço do cliente, soma adicionais e permite atualizar 
     ...workspace,
     ...pricing,
     combinedJobs,
+    companyStatus,
+    jobsInPeriod,
+    outsideFinance,
+    renderForecast,
     renderIntegrationSummary: () => '',
     bindIntegrations() {},
+    renderCalendarSettings: () => '',
+    bindCalendarSettings() {},
     structuredClone,
     AbortSignal,
     queue() {},
@@ -81,6 +94,29 @@ test('formulário aplica preço do cliente, soma adicionais e permite atualizar 
       q('#edit-form').dispatchEvent(
         new window.Event('submit', { cancelable: true, bubbles: true }),
       );
+    context.harness.navigate('settings');
+    assert.equal(document.querySelectorAll('[data-palette-choice]').length, 25);
+    assert.equal(document.documentElement.dataset.palette, 'aurora');
+    assert.equal(q('#accent-controls').hidden, true);
+    q('[data-palette-choice="ocean"]').click();
+    assert.equal(window.localStorage.getItem('thumbs-palette'), 'ocean');
+    assert.equal(document.documentElement.style.getPropertyValue('--palette-primary'), '#729eff');
+    assert.equal(q('[data-palette-choice="ocean"]').getAttribute('aria-pressed'), 'true');
+    q('[data-palette-choice="custom"]').click();
+    assert.equal(q('#accent-controls').hidden, false);
+    assert.equal(q('#accent-picker').value, '#8844bb');
+    input('#accent-picker', '#993355');
+    assert.equal(window.localStorage.getItem('thumbs-accent'), '#993355');
+    q('[data-palette-choice="aurora"]').click();
+    assert.equal(q('#accent-controls').hidden, true);
+    context.harness.navigate('finance');
+    assert.ok(q('.finance-donut'));
+    assert.ok(q('.finance-origins'));
+    q('[data-chart-mode="line"]').click();
+    assert.equal(q('.chart').dataset.mode, 'line');
+    assert.ok(q('.chart-line polyline'));
+    q('[data-chart-mode="bars"]').click();
+    assert.equal(q('.chart').dataset.mode, 'bars');
     context.harness.navigate('tools');
     assert.ok(q('[data-page="notes"]'));
     input('#case-input', 'OLÁ MUNDO');

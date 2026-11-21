@@ -33,6 +33,7 @@ const paths = {
   check: 'M5 12l4 4L19 6',
   trash: 'M3 6h18 M9 6V3h6v3 M5 6l1 15h12l1-15 M10 10v7 M14 10v7',
   arrow: 'M7 17L17 7 M7 7h10v10',
+  close: 'M6 6l12 12M18 6 6 18',
 };
 const icon = (name) =>
   /* HTML */ `<svg
@@ -53,6 +54,9 @@ const esc = (v) =>
   );
 const money = (v, c = 'USD') =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: c }).format(v);
+export function modalHeader(title, symbol, subtitle = '') {
+  return `<header class="modalhead"><span class="modal-symbol">${icon(symbol)}</span><div><h2 id="app-modal-title">${esc(title)}</h2>${subtitle ? `<p class="subtitle">${esc(subtitle)}</p>` : ''}</div><button class="modal-close" type="button" data-close aria-label="Fechar">${icon('close')}</button></header>`;
+}
 const date = (v) =>
   new Date(v + 'T12:00:00')
     .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })

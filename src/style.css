@@ -353,12 +353,8 @@ p {
 .bar {
   width: 100%;
   max-width: 39px;
-  background: #cce1c6;
   border-radius: 5px 5px 0 0;
   min-height: 2px;
-}
-.barwrap:last-child .bar {
-  background: #377c5c;
 }
 .barwrap span {
   position: absolute;
@@ -1227,12 +1223,6 @@ tbody tr:hover {
 }
 .deadlinecopy small {
   color: var(--muted);
-}
-.bar {
-  background: #a4d2b760;
-}
-.barwrap:last-child .bar {
-  background: #84ad80;
 }
 .dot {
   background: #84ad80;

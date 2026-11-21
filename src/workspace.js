@@ -37,33 +37,33 @@ export function dueBadge(job) {
   >`;
 }
 
-export function renderHero(jobs) {
+export function renderHero(jobs, companyJobs = []) {
   const active = jobs.filter((j) => j.status !== 'delivered');
   const late = active.filter((j) => deadlineState(j).tone === 'late').length;
   const soon = active.filter((j) => deadlineState(j).tone === 'urgent').length;
-  const complete = jobs.filter((j) => j.status === 'delivered').length;
-  const percent = jobs.length ? Math.round((complete / jobs.length) * 100) : 0;
+  const tracked = [...jobs, ...companyJobs];
+  const complete = tracked.filter((j) => j.status === 'delivered').length;
+  const percent = tracked.length ? Math.round((complete / tracked.length) * 100) : 0;
   return /* HTML */ `<section class="studio-hero">
     <div>
-      <span class="eyebrow">SEU ESPAÇO PARA CRIAR</span>
-      <h2>Menos gestão.<br />Mais criação<span>.</span></h2>
-      <p>Seu estúdio em movimento, do briefing ao pagamento.</p>
+      <h2>Seu estúdio<span>.</span></h2>
+      <p>Acompanhe suas entregas, organize os próximos prazos e retome seus trabalhos.</p>
       <div class="hero-actions">
         <button class="primary" data-action="new-job">＋ Criar thumbnail <kbd>N</kbd></button
-        ><button class="hero-link" data-page="jobs">Abrir meu quadro ↗</button>
+        ><button class="secondary hero-link" data-page="jobs">Abrir quadro</button>
       </div>
     </div>
     <div class="hero-dashboard">
       <div class="hero-progress">
         <span>ENTREGAS CONCLUÍDAS</span><strong>${percent}<small>%</small></strong>
         <div class="progress-track"><i style="width:${percent}%"></i></div>
-        <small>${complete} de ${jobs.length} trabalhos entregues</small>
+        <small>${complete} de ${tracked.length} trabalhos entregues · próprios e de empresas</small>
       </div>
       <div class="hero-counters">
-        <button data-focus="late"><strong>${late}</strong><span>atrasadas ↗</span></button
-        ><button data-focus="soon"><strong>${soon}</strong><span>nas próximas 24h ↗</span></button
+        <button data-focus="late"><strong>${late}</strong><span>atrasadas</span></button
+        ><button data-focus="soon"><strong>${soon}</strong><span>nas próximas 24h</span></button
         ><button data-page="jobs">
-          <strong>${active.length}</strong><span>em andamento ↗</span>
+          <strong>${active.length}</strong><span>em andamento</span>
         </button>
       </div>
     </div>

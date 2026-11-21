@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import * as model from './model.js';
-import { combinedJobs } from './integrations.js';
+import { combinedJobs, companyStatus, outsideFinance, renderForecast } from './integrations.js';
 
 test('interface migra dados e apresenta valores separados; cotação conserva cache na falha', async () => {
   const fixture = {
@@ -50,7 +50,7 @@ test('interface migra dados e apresenta valores separados; cotação conserva ca
   const app = { innerHTML: '' },
     toast = { textContent: '', style: {} };
   const document = {
-    documentElement: { dataset: {} },
+    documentElement: { dataset: {}, style: { setProperty() {} } },
     querySelector: (s) => (s === '#app' ? app : s === '#toast' ? toast : null),
     querySelectorAll: () => [],
   };
@@ -59,6 +59,9 @@ test('interface migra dados e apresenta valores separados; cotação conserva ca
     ...ui,
     ...workspace,
     combinedJobs,
+    companyStatus,
+    outsideFinance,
+    renderForecast,
     renderIntegrationSummary: () => '',
     bindIntegrations() {},
     document,

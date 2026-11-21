@@ -161,7 +161,7 @@ test('soma geral converte USD, mantém trabalhos próprios e conta ajustes só c
     count: 1,
   });
   assert.equal(own.jobs.length, 1);
-  assert.match(renderIntegrations({ rate: 5, clients: [], jobs: [] }), /Tudo junto/);
+  assert.match(renderIntegrations({ rate: 5, clients: [], jobs: [] }), /Todas as origens/);
 });
 test('portais so entram no financeiro depois da entrega, mesmo com pagamento informado', () => {
   for (const source of ['workview', 'ohero']) {
@@ -339,13 +339,21 @@ test('filtros da interface separam empresas e trabalhos próprios com valores co
     paymentSelect.onchange();
     assert.equal(document.querySelectorAll('.integration-job').length, 0);
     paymentSelect = document.querySelector('#companies-payment');
-    paymentSelect.value = 'in_progress';
+    paymentSelect.value = 'all';
     paymentSelect.onchange();
+    const statusSelect = document.querySelector('#companies-status');
+    statusSelect.value = 'production';
+    statusSelect.onchange();
     assert.equal(document.querySelectorAll('.integration-job').length, 1);
     assert.equal(
       document.querySelector('.integration-payment').textContent.trim(),
-      'Fora do financeiro',
+      'Trabalhando',
     );
+    assert.equal(document.querySelector('.statvalue').textContent, 'R$ 0,00');
+    const from = document.querySelector('#companies-from');
+    from.value = currentMonth + '-02';
+    from.onchange();
+    assert.equal(document.querySelectorAll('.integration-job').length, 0);
   } finally {
     globalThis.document = previous;
     dom.window.close();
@@ -398,18 +406,18 @@ test('API exige autenticação e origem; falha preserva snapshot e não revela t
       attempts++;
       throw Error('offline');
     };
-    await DB.prepare('UPDATE integrations SET last_attempt=?')
-      .bind(Date.now() - 30 * 60000)
+    await DB.prepare('UPDATE integrations SET last_attempt=?,error=NULL')
+      .bind(Date.now() - 2 * 60000)
       .run();
     await syncIntegrations(env, { fetcher });
-    assert.equal(attempts, 0, 'automatic refresh waits one hour');
+    assert.equal(attempts, 0, 'automatic refresh waits five minutes after success');
     await syncIntegrations(env, { fetcher, force: true });
-    assert.equal(attempts, 1, 'manual refresh remains available before one hour');
+    assert.equal(attempts, 1, 'manual refresh is available before five minutes');
     await DB.prepare('UPDATE integrations SET last_attempt=?')
-      .bind(Date.now() - 61 * 60000)
+      .bind(Date.now() - 2 * 60000)
       .run();
     await syncIntegrations(env, { fetcher });
-    assert.equal(attempts, 2, 'automatic refresh runs after one hour');
+    assert.equal(attempts, 2, 'automatic refresh retries failures after one minute');
     const response = await handleAPI(
       new Request('https://app.test/api/integrations/workview', {
         method: 'DELETE',

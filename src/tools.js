@@ -1,5 +1,6 @@
-import { esc, money } from './ui.js';
-import { today } from './model.js';
+import { esc, money, modalHeader } from './ui.js';
+import { today, dueTimestamp, deadlineState } from './model.js';
+import { companyStatus } from './integrations.js';
 export const monthlyJobs = (jobs, month = today().slice(0, 7)) =>
   jobs.filter((j) => j.created.startsWith(month));
 export function monthPicker(jobs, selected) {
@@ -271,28 +272,109 @@ export function bindNotes(data, persist, render, toast) {
   );
 }
 let calendarMonth = today().slice(0, 7);
-export function renderDeadlineCalendar(jobs, clients) {
+let calendarFilter = 'all';
+export function renderDeadlineCalendar(jobs) {
   const [y, m] = calendarMonth.split('-').map(Number),
     first = new Date(y, m - 1, 1),
     days = new Date(y, m, 0).getDate(),
     offset = (first.getDay() + 6) % 7;
-  return `<section class="panel tool-panel"><div class="calendar-heading"><button class="secondary" data-calendar="-1" aria-label="Mês anterior">←</button><h2>${first.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h2><button class="secondary" data-calendar="1" aria-label="Próximo mês">→</button><button class="secondary" data-calendar="today">Hoje</button></div><div class="calendar-scroll"><div class="deadline-calendar">${['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((d) => `<strong>${d}</strong>`).join('')}${'<div class="calendar-blank"></div>'.repeat(offset)}${Array.from(
+  const visible = jobs.filter(
+    (j) =>
+      calendarFilter === 'all' ||
+      (calendarFilter === 'open' ? j.status !== 'delivered' : j.status === 'delivered'),
+  );
+  const byDay = new Map();
+  for (const job of visible) {
+    if (!job.dueAt && !job.deadline) continue;
+    const due = new Date(dueTimestamp(job));
+    if (!Number.isFinite(due.getTime())) continue;
+    const key = `${due.getFullYear()}-${String(due.getMonth() + 1).padStart(2, '0')}-${String(due.getDate()).padStart(2, '0')}`;
+    if (!byDay.has(key)) byDay.set(key, []);
+    byDay.get(key).push(job);
+  }
+  const monthJobs = [...byDay]
+    .filter(([key]) => key.startsWith(calendarMonth))
+    .flatMap(([, list]) => list);
+  const undated = visible.filter(
+    (j) => j.source !== 'own' && j.status !== 'delivered' && !j.dueAt && !j.deadline,
+  );
+  const item = (j) => {
+    const due = j.dueAt || j.deadline;
+    const time =
+      due &&
+      new Date(dueTimestamp(j)).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const body = `<strong>${esc(j.title)}</strong><small>${esc(j.company || j.client)} · ${esc(companyStatus(j))}${time ? ' · ' + time : ''}</small>`;
+    return j.source === 'own'
+      ? `<button class="calendar-job" data-edit="${esc(j.id)}">${body}</button>`
+      : `<article class="calendar-job">${body}</article>`;
+  };
+  return `<section class="panel tool-panel calendar-panel"><div class="calendar-top"><div><h2>${first.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h2><p>${monthJobs.length} com prazo no mês · ${monthJobs.filter((j) => deadlineState(j).tone === 'late').length} em atraso</p></div><div class="calendar-heading"><button class="secondary" data-calendar="-1" aria-label="Mês anterior">‹</button><button class="secondary" data-calendar="today">Hoje</button><button class="secondary" data-calendar="1" aria-label="Próximo mês">›</button></div></div><div class="calendar-options"><label>Exibir <select id="calendar-filter"><option value="all" ${calendarFilter === 'all' ? 'selected' : ''}>Todas</option><option value="open" ${calendarFilter === 'open' ? 'selected' : ''}>Pendentes</option><option value="complete" ${calendarFilter === 'complete' ? 'selected' : ''}>Concluídas</option></select></label><span><i data-tone="open"></i>Pendentes</span><span><i data-tone="late"></i>Atrasadas</span><span><i data-tone="complete"></i>Concluídas</span></div><div class="deadline-calendar">${['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((d) => `<strong>${d}</strong>`).join('')}${'<div class="calendar-blank"></div>'.repeat(offset)}${Array.from(
     { length: days },
     (_, i) => {
       const key = `${calendarMonth}-${String(i + 1).padStart(2, '0')}`;
-      return `<div class="calendar-day ${key === today() ? 'is-today' : ''}"><strong>${i + 1}</strong>${jobs
-        .filter((j) => (j.dueAt?.slice(0, 10) || j.deadline) === key)
-        .map(
-          (j) =>
-            `<button data-edit="${esc(j.id)}" class="calendar-job ${j.status === 'delivered' ? 'complete' : ''}">${esc(j.title)}<small>${esc(clients.find((c) => c.id === j.clientId)?.name || '')} · ${j.dueAt?.slice(11, 16) || '23:59'} · ${j.status === 'delivered' ? 'Entregue' : 'Pendente'}</small></button>`,
-        )
-        .join('')}</div>`;
+      const entries = byDay.get(key) || [];
+      return `<button class="calendar-day ${key === today() ? 'is-today' : ''}" data-calendar-day="${key}" aria-haspopup="dialog" ${key === today() ? 'aria-current="date"' : ''} aria-label="${i + 1} · ${entries.length} entregas"><strong>${i + 1}</strong>${
+        entries.length
+          ? `<span class="calendar-markers">${entries
+              .slice(0, 3)
+              .map(
+                (j) =>
+                  `<i data-tone="${j.status === 'delivered' ? 'complete' : deadlineState(j).tone === 'late' ? 'late' : 'open'}"></i>`,
+              )
+              .join(
+                '',
+              )}${entries.length > 3 ? `<small>+${entries.length - 3}</small>` : ''}</span><small class="calendar-day-title">${esc(entries[0].title)}</small>`
+          : ''
+      }</button>${
+        entries.length
+          ? `<template data-day-details="${key}">${entries
+              .sort((a, b) => dueTimestamp(a) - dueTimestamp(b))
+              .map(item)
+              .join('')}</template>`
+          : ''
+      }`;
     },
   ).join(
     '',
-  )}</div></div><p>Selecione uma entrega para editar. A lista abaixo mantém todas as pendências, inclusive de outros meses.</p></section>`;
+  )}</div>${undated.length ? `<details class="calendar-agenda" open><summary>Empresas sem prazo informado · ${undated.length}</summary>${undated.map(item).join('')}</details>` : ''}</section>`;
 }
-export function bindDeadlineCalendar(render) {
+export function bindDeadlineCalendar(render, editJob) {
+  const filter = document.querySelector('#calendar-filter');
+  if (filter)
+    filter.onchange = () => {
+      calendarFilter = filter.value;
+      render();
+      document.querySelector('#calendar-filter')?.focus();
+    };
+  document.querySelectorAll('[data-calendar-day]').forEach((button) => {
+    button.onclick = () => {
+      const day = button.dataset.calendarDay;
+      const title = new Date(day + 'T12:00:00').toLocaleDateString('pt-BR', {
+        dateStyle: 'full',
+      });
+      const details = document.querySelector(`[data-day-details="${day}"]`);
+      const modal = document.querySelector('#modal');
+      modal.innerHTML = `${modalHeader(title.charAt(0).toUpperCase() + title.slice(1), 'deadlines', 'Entregas do dia')}<div class="calendar-dialog-content"></div>`;
+      const content = modal.querySelector('.calendar-dialog-content');
+      if (details) content.append(details.content.cloneNode(true));
+      else content.textContent = 'Nenhuma entrega para este dia com o filtro atual.';
+      modal.querySelector('[data-close]').onclick = () => modal.close();
+      modal.addEventListener(
+        'close',
+        () => {
+          if (!modal.open) button.focus();
+        },
+        { once: true },
+      );
+      content.querySelectorAll('[data-edit]').forEach((job) => {
+        job.onclick = () => {
+          modal.close();
+          editJob(job.dataset.edit);
+        };
+      });
+      modal.showModal();
+    };
+  });
   document.querySelectorAll('[data-calendar]').forEach(
     (b) =>
       (b.onclick = () => {
@@ -303,16 +385,34 @@ export function bindDeadlineCalendar(render) {
           calendarMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         }
         render();
+        document.querySelector(`[data-calendar="${b.dataset.calendar}"]`)?.focus();
       }),
   );
 }
 export function financialBreakdown(jobs, rate) {
-  const values = ['Recebido', 'A receber'].map((label, i) => ({
-      label,
-      value: jobs
-        .filter((j) => j.paid === !i)
-        .reduce((s, j) => s + j.value * ((j.currency || 'USD') === 'USD' ? rate : 1), 0),
-    })),
-    max = Math.max(1, ...values.map((v) => v.value));
-  return `<section class="panel tool-panel"><h2>Recebido × a receber</h2><p>Valores do período selecionado, em BRL estimado pela cotação atual.</p>${values.map((v) => `<div class="finance-bar"><span>${v.label}</span><div><i style="width:${(v.value / max) * 100}%"></i></div><strong>${money(v.value, 'BRL')}</strong></div>`).join('')}</section>`;
+  let received = 0;
+  let pending = 0;
+  for (const job of jobs) {
+    const factor = (job.currency || 'USD') === 'USD' ? rate : 1;
+    const payment = job.received ?? (job.paid ? job.value : 0);
+    received += payment * factor;
+    pending += (job.value - payment) * factor;
+  }
+  const percent =
+    Math.max(0, received) + Math.max(0, pending)
+      ? (100 * Math.max(0, received)) / (Math.max(0, received) + Math.max(0, pending))
+      : 0;
+  return `<section class="panel tool-panel finance-composition"><h2>Recebido × a receber</h2><p>Composição dos ganhos do período selecionado.</p><div class="finance-donut-layout"><div class="finance-donut ${received || pending ? '' : 'is-empty'}" style="--percent:${percent}%" aria-hidden="true"><span>${money(received + pending, 'BRL')}</span></div><dl><div><dt><i></i>Recebido</dt><dd>${money(received, 'BRL')}</dd></div><div><dt><i></i>A receber</dt><dd>${money(pending, 'BRL')}</dd></div></dl></div></section>`;
+}
+
+export function financeByOrigin(jobs, rate) {
+  const values = new Map();
+  for (const job of jobs) {
+    const label = job.company || 'Meus trabalhos';
+    const amount = job.value * ((job.currency || 'USD') === 'USD' ? rate : 1);
+    values.set(label, (values.get(label) || 0) + amount);
+  }
+  const ranked = [...values].sort((a, b) => b[1] - a[1]);
+  const max = Math.max(1, ...values.values());
+  return `<section class="panel tool-panel finance-origins"><h2>Ganhos por origem</h2><p>Recebidos e pendentes por empresa e trabalhos próprios.</p>${ranked.map(([label, value]) => `<div class="origin-chart-row"><strong>${esc(label)}</strong><span>${money(value, 'BRL')}</span><div aria-hidden="true"><i style="width:${Math.max(0, value / max) * 100}%"></i></div></div>`).join('') || '<div class="empty">Nenhum ganho no período selecionado.</div>'}</section>`;
 }

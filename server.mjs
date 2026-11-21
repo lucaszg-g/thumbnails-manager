@@ -89,7 +89,7 @@ const server = http.createServer(async (req, res) => {
 const integrationEnv = { DB: database, CALENDAR_ENCRYPTION_KEY: integrationKey };
 const refreshIntegrations = () =>
   syncIntegrations(integrationEnv).catch(() => console.error('Falha ao atualizar empresas.'));
-// Check hourly eligibility even when no browser tab is open.
+// Keep portal data current even when no browser tab is open.
 const integrationTimer = setInterval(refreshIntegrations, 60000);
 integrationTimer.unref();
 server.listen(Number(process.env.PORT) || 3000, '127.0.0.1', () => {
